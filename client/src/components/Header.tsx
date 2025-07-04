@@ -28,34 +28,28 @@ export default function Header() {
           </div>
           
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/">
-              <a className={`font-medium transition-colors ${
-                isActive('/') 
-                  ? 'text-spotify-green' 
-                  : 'text-spotify-text hover:text-spotify-green-light'
-              }`}>
-                Início
-              </a>
+            <Link href="/" className={`font-medium transition-colors ${
+              isActive('/') 
+                ? 'text-spotify-green' 
+                : 'text-spotify-text hover:text-spotify-green-light'
+            }`}>
+              Início
             </Link>
             
-            <Link href="/playlists">
-              <a className={`font-medium transition-colors ${
-                isActive('/playlists') 
-                  ? 'text-spotify-green' 
-                  : 'text-spotify-text hover:text-spotify-green-light'
-              }`}>
-                Minhas Playlists
-              </a>
+            <Link href="/playlists" className={`font-medium transition-colors ${
+              isActive('/playlists') 
+                ? 'text-spotify-green' 
+                : 'text-spotify-text hover:text-spotify-green-light'
+            }`}>
+              Minhas Playlists
             </Link>
             
-            <Link href="/config-spotify">
-              <a className={`font-medium transition-colors ${
-                isActive('/config-spotify') 
-                  ? 'text-spotify-green' 
-                  : 'text-spotify-text hover:text-spotify-green-light'
-              }`}>
-                Configurações
-              </a>
+            <Link href="/config-spotify" className={`font-medium transition-colors ${
+              isActive('/config-spotify') 
+                ? 'text-spotify-green' 
+                : 'text-spotify-text hover:text-spotify-green-light'
+            }`}>
+              Configurações
             </Link>
           </div>
 
@@ -80,13 +74,12 @@ export default function Header() {
                     <i className="fas fa-user mr-2"></i>
                     Meu Perfil
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-spotify-text hover:text-white hover:bg-spotify-card">
-                    <Link href="/config-spotify">
-                      <div className="flex items-center">
-                        <i className="fab fa-spotify mr-2"></i>
-                        Configurar Spotify
-                      </div>
-                    </Link>
+                  <DropdownMenuItem 
+                    className="text-spotify-text hover:text-white hover:bg-spotify-card"
+                    onClick={() => window.location.href = '/config-spotify'}
+                  >
+                    <i className="fab fa-spotify mr-2"></i>
+                    Configurar Spotify
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-spotify-card" />
                   <DropdownMenuItem 

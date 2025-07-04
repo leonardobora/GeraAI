@@ -48,7 +48,10 @@ export class SpotifyService {
   constructor() {
     this.clientId = process.env.SPOTIFY_CLIENT_ID || "";
     this.clientSecret = process.env.SPOTIFY_CLIENT_SECRET || "";
-    this.redirectUri = process.env.SPOTIFY_REDIRECT_URI || "";
+    
+    // Set redirect URI based on current domain
+    const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+    this.redirectUri = `https://${domain}/api/spotify/callback`;
 
     if (!this.clientId || !this.clientSecret) {
       throw new Error("Spotify client ID e secret são obrigatórios");
