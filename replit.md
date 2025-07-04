@@ -93,7 +93,9 @@ This is a full-stack web application that generates personalized Spotify playlis
 ## Changelog
 
 Changelog:
-- July 04, 2025. Initial setup
+- July 04, 2025. Initial setup - Full-stack playlist generator implemented
+- July 04, 2025. Database and Perplexity AI integration completed
+- July 04, 2025. Awaiting Spotify Developer App configuration
 
 ## User Preferences
 
