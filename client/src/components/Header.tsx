@@ -74,19 +74,17 @@ export default function Header() {
                     <i className="fas fa-user mr-2"></i>
                     Meu Perfil
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="text-spotify-text hover:text-white hover:bg-spotify-card"
-                    onClick={() => window.location.href = '/config-spotify'}
-                  >
-                    <i className="fab fa-spotify mr-2"></i>
-                    Configurar Spotify
+                  <DropdownMenuItem asChild>
+                    <Link href="/config-spotify" className="flex items-center text-spotify-text hover:text-white hover:bg-spotify-card w-full">
+                      <i className="fab fa-spotify mr-2"></i>
+                      Configurar Spotify
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="text-spotify-text hover:text-white hover:bg-spotify-card"
-                    onClick={() => window.location.href = '/config-ia'}
-                  >
-                    <i className="fas fa-robot mr-2"></i>
-                    Configurar IA
+                  <DropdownMenuItem asChild>
+                    <Link href="/config-ia" className="flex items-center text-spotify-text hover:text-white hover:bg-spotify-card w-full">
+                      <i className="fas fa-robot mr-2"></i>
+                      Configurar IA
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-spotify-card" />
                   <DropdownMenuItem 

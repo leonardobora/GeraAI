@@ -123,11 +123,21 @@ export class SpotifyService {
     const response = await fetch('https://api.spotify.com/v1/me', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao buscar perfil do usuário: ${response.status}`);
+      const errorData = await response.text();
+      console.error(`Spotify API Error ${response.status}: ${errorData}`);
+      
+      if (response.status === 403) {
+        throw new Error('Token de acesso expirado ou inválido. Reconecte sua conta Spotify.');
+      } else if (response.status === 401) {
+        throw new Error('Token não autorizado. Reconecte sua conta Spotify.');
+      } else {
+        throw new Error(`Erro ao buscar perfil do usuário: ${response.status} - ${errorData}`);
+      }
     }
 
     return await response.json();

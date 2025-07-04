@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { useSpotify } from "@/hooks/useSpotify";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,11 +6,23 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function ConfigSpotify() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const { status, isLoadingStatus, isConnected, connect, disconnect, isConnecting, isDisconnecting } = useSpotify();
+  const [hasSpotifyError, setHasSpotifyError] = useState(false);
+  const [errorType, setErrorType] = useState<string>("");
+
+  const handleConnect = () => {
+    setHasSpotifyError(false);
+    connect();
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -23,6 +35,47 @@ export default function ConfigSpotify() {
         window.location.href = "/api/login";
       }, 500);
       return;
+    }
+
+    // Check for Spotify status in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const spotifyStatus = urlParams.get('spotify');
+    
+    if (spotifyStatus && ['error', 'auth-error', 'token-error'].includes(spotifyStatus)) {
+      setHasSpotifyError(true);
+      setErrorType(spotifyStatus);
+      
+      let title = "Erro na conexão com Spotify";
+      let description = "Houve um problema ao conectar com o Spotify.";
+      
+      if (spotifyStatus === 'auth-error') {
+        title = "Erro de autorização";
+        description = "O Spotify rejeitou a conexão. Verifique se você possui uma conta Premium ou se não há restrições na sua conta.";
+      } else if (spotifyStatus === 'token-error') {
+        title = "Token expirado";
+        description = "O token de acesso expirou. Clique em reconectar para gerar um novo token.";
+      } else {
+        const errorMessage = urlParams.get('message');
+        if (errorMessage) {
+          description = `Erro: ${decodeURIComponent(errorMessage)}`;
+        }
+      }
+      
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+      
+      // Remove the error parameters from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (spotifyStatus === 'connected') {
+      toast({
+        title: "Spotify conectado!",
+        description: "Sua conta Spotify foi conectada com sucesso.",
+      });
+      // Remove the success parameter from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [isAuthenticated, isLoading, toast]);
 
@@ -49,6 +102,44 @@ export default function ConfigSpotify() {
               Conecte sua conta Spotify para criar playlists automaticamente
             </p>
           </div>
+
+          {hasSpotifyError && (
+            <Alert className="mb-6 border-spotify-error/20 bg-spotify-error/10">
+              <i className="fas fa-exclamation-triangle text-spotify-error"></i>
+              <AlertDescription className="text-spotify-text">
+                {errorType === 'auth-error' ? (
+                  <>
+                    <strong className="text-spotify-error">Erro de Autorização:</strong><br />
+                    O Spotify rejeitou a conexão. Possíveis causas:
+                    <ul className="mt-2 ml-4 space-y-1">
+                      <li>• Conta Spotify restrita ou suspensa</li>
+                      <li>• Permissões de aplicativo não concedidas</li>
+                      <li>• Região não suportada pelo aplicativo</li>
+                    </ul>
+                    <strong className="text-white">Solução:</strong> Verifique sua conta Spotify e tente conectar novamente.
+                  </>
+                ) : errorType === 'token-error' ? (
+                  <>
+                    <strong className="text-spotify-error">Token Expirado:</strong><br />
+                    Sua sessão com o Spotify expirou e precisa ser renovada.
+                    <br /><br />
+                    <strong className="text-white">Solução:</strong> Clique em "Desconectar Spotify" e depois "Conectar com Spotify" para renovar.
+                  </>
+                ) : (
+                  <>
+                    <strong className="text-spotify-error">Erro na conexão com Spotify:</strong><br />
+                    Houve um problema ao conectar com sua conta Spotify. Isso pode acontecer por:
+                    <ul className="mt-2 ml-4 space-y-1">
+                      <li>• Token de acesso expirado</li>
+                      <li>• Permissões insuficientes na conta Spotify</li>
+                      <li>• Problema temporário no Spotify</li>
+                    </ul>
+                    <strong className="text-white">Solução:</strong> Clique em "Conectar com Spotify" novamente para tentar reconectar.
+                  </>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Card className="bg-spotify-card border-spotify-card">
             <CardContent className="p-8">
@@ -121,7 +212,7 @@ export default function ConfigSpotify() {
                     {isConnected ? (
                       <>
                         <Button
-                          onClick={disconnect}
+                          onClick={handleDisconnect}
                           disabled={isDisconnecting}
                           className="flex-1 bg-spotify-error hover:bg-red-600 text-white font-semibold"
                         >
@@ -138,7 +229,7 @@ export default function ConfigSpotify() {
                           )}
                         </Button>
                         <Button
-                          onClick={connect}
+                          onClick={handleConnect}
                           disabled={isConnecting}
                           className="flex-1 bg-spotify-green hover:bg-spotify-green-light text-spotify-dark font-semibold"
                         >
@@ -157,7 +248,7 @@ export default function ConfigSpotify() {
                       </>
                     ) : (
                       <Button
-                        onClick={connect}
+                        onClick={handleConnect}
                         disabled={isConnecting}
                         className="w-full bg-spotify-green hover:bg-spotify-green-light text-spotify-dark font-semibold"
                       >

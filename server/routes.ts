@@ -71,10 +71,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         spotifyUser.id
       );
 
-      res.redirect('/?spotify=connected');
+      res.redirect('/config-spotify?spotify=connected');
     } catch (error) {
       console.error("Erro no callback do Spotify:", error);
-      res.redirect('/?spotify=error');
+      
+      // Check if the error is related to token or permissions
+      if (error instanceof Error) {
+        if (error.message.includes('403') || error.message.includes('401')) {
+          res.redirect('/config-spotify?spotify=auth-error');
+        } else if (error.message.includes('Token')) {
+          res.redirect('/config-spotify?spotify=token-error');
+        } else {
+          res.redirect('/config-spotify?spotify=error&message=' + encodeURIComponent(error.message));
+        }
+      } else {
+        res.redirect('/config-spotify?spotify=error');
+      }
     }
   });
 
