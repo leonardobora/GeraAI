@@ -77,7 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if the error is related to token or permissions
       if (error instanceof Error) {
-        if (error.message.includes('403') || error.message.includes('401')) {
+        if (error.message.includes('não autorizado no aplicativo') || error.message.includes('dashboard do desenvolvedor')) {
+          res.redirect('/config-spotify?spotify=registration-error');
+        } else if (error.message.includes('403') || error.message.includes('401')) {
           res.redirect('/config-spotify?spotify=auth-error');
         } else if (error.message.includes('Token')) {
           res.redirect('/config-spotify?spotify=token-error');

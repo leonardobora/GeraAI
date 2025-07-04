@@ -132,7 +132,12 @@ export class SpotifyService {
       console.error(`Spotify API Error ${response.status}: ${errorData}`);
       
       if (response.status === 403) {
-        throw new Error('Token de acesso expirado ou inválido. Reconecte sua conta Spotify.');
+        // Check if error indicates user not registered in app
+        if (errorData.includes('not registered') || errorData.includes('Check settings')) {
+          throw new Error('Usuário não autorizado no aplicativo Spotify. Verifique se você tem acesso ao app no dashboard do desenvolvedor.');
+        } else {
+          throw new Error('Token de acesso expirado ou inválido. Reconecte sua conta Spotify.');
+        }
       } else if (response.status === 401) {
         throw new Error('Token não autorizado. Reconecte sua conta Spotify.');
       } else {

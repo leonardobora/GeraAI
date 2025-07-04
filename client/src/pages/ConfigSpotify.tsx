@@ -41,14 +41,17 @@ export default function ConfigSpotify() {
     const urlParams = new URLSearchParams(window.location.search);
     const spotifyStatus = urlParams.get('spotify');
     
-    if (spotifyStatus && ['error', 'auth-error', 'token-error'].includes(spotifyStatus)) {
+    if (spotifyStatus && ['error', 'auth-error', 'token-error', 'registration-error'].includes(spotifyStatus)) {
       setHasSpotifyError(true);
       setErrorType(spotifyStatus);
       
       let title = "Erro na conexão com Spotify";
       let description = "Houve um problema ao conectar com o Spotify.";
       
-      if (spotifyStatus === 'auth-error') {
+      if (spotifyStatus === 'registration-error') {
+        title = "Usuário não registrado";
+        description = "Sua conta não está registrada no aplicativo Spotify Developer. Entre em contato com o administrador para ser adicionado.";
+      } else if (spotifyStatus === 'auth-error') {
         title = "Erro de autorização";
         description = "O Spotify rejeitou a conexão. Verifique se você possui uma conta Premium ou se não há restrições na sua conta.";
       } else if (spotifyStatus === 'token-error') {
@@ -107,7 +110,19 @@ export default function ConfigSpotify() {
             <Alert className="mb-6 border-spotify-error/20 bg-spotify-error/10">
               <i className="fas fa-exclamation-triangle text-spotify-error"></i>
               <AlertDescription className="text-spotify-text">
-                {errorType === 'auth-error' ? (
+                {errorType === 'registration-error' ? (
+                  <>
+                    <strong className="text-spotify-error">Usuário Não Registrado:</strong><br />
+                    Sua conta não está autorizada no aplicativo Spotify Developer.
+                    <br /><br />
+                    <strong className="text-white">Como resolver:</strong>
+                    <ol className="mt-2 ml-4 space-y-1">
+                      <li>1. Entre em contato com o administrador do sistema</li>
+                      <li>2. Forneça seu email do Spotify para ser adicionado à lista de usuários</li>
+                      <li>3. Aguarde confirmação e tente conectar novamente</li>
+                    </ol>
+                  </>
+                ) : errorType === 'auth-error' ? (
                   <>
                     <strong className="text-spotify-error">Erro de Autorização:</strong><br />
                     O Spotify rejeitou a conexão. Possíveis causas:
