@@ -32,7 +32,7 @@ Responda apenas com uma lista numerada de ${numberOfTracks} músicas no formato:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'sonar',
+          model: 'llama-3.1-sonar-small-128k-online',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
@@ -45,12 +45,21 @@ Responda apenas com uma lista numerada de ${numberOfTracks} músicas no formato:
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Erro na API Perplexity: ${response.status} - ${errorText}`);
         throw new Error(`Erro na API Perplexity: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log("Resposta da API Perplexity:", JSON.stringify(data, null, 2));
+      
       const content = data.choices[0]?.message?.content || "";
-      return this.parseRecommendations(content);
+      console.log("Conteúdo extraído:", content);
+      
+      const recommendations = this.parseRecommendations(content);
+      console.log("Recomendações parseadas:", recommendations);
+      
+      return recommendations;
     } catch (error) {
       throw new Error("Erro ao gerar recomendações com Perplexity");
     }

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { SpotifyService } from "./services/SpotifyService";
-import { UniversalAIService } from "./services/UniversalAIService";
+import { AIService } from "./services/AIService";
 import { PlaylistService } from "./services/PlaylistService";
 import { insertPlaylistSchema } from "@shared/schema";
 import { z } from "zod";
@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const body = generatePlaylistSchema.parse(req.body);
       
       const playlistService = new PlaylistService();
-      const universalAIService = new UniversalAIService();
+      const aiService = new AIService();
       const spotifyService = new SpotifyService();
 
       // Generate playlist with AI
@@ -145,18 +145,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Get music recommendations from AI with rate limiting and user settings
-      const recommendations = await universalAIService.generateMusicRecommendations(
-        userId,
+      const recommendations = await aiService.generateMusicRecommendations(
         body.prompt,
         body.tamanho,
         body.nivelDescoberta,
-        body.conteudoExplicito,
-        {
-          aiProvider: user.aiProvider || undefined,
-          perplexityApiKey: user.perplexityApiKey || undefined,
-          openaiApiKey: user.openaiApiKey || undefined,
-          geminiApiKey: user.geminiApiKey || undefined,
-        }
+        body.conteudoExplicito
       );
 
       // Search for tracks on Spotify
@@ -364,15 +357,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get rate limit status
+  // Get rate limit status (simplified for now)
   app.get('/api/user/rate-limit', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const universalAIService = new UniversalAIService();
-      const remaining = universalAIService.getRemainingRequests(userId);
-      
       res.json({
-        remainingRequests: remaining,
+        remainingRequests: 10, // Fixed for now
         maxRequests: 10, // Per hour
         resetTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
       });
