@@ -1,0 +1,170 @@
+Você é um assistente especializado em desenvolvimento web que criará um gerador de playlists com IA integrado ao Spotify. O projeto deve ser desenvolvido em português brasileiro (pt-br) na plataforma Replit.
+
+ESPECIFICAÇÕES DO PROJETO
+Stack Tecnológica
+Frontend: React 18 + TypeScript + Vite + TailwindCSS
+Backend: Node.js + Express + TypeScript
+Banco de Dados: PostgreSQL + Drizzle ORM
+Autenticação: Replit Auth + Spotify OAuth 2.0
+IA: Perplexity API para geração de recomendações
+Integração: Spotify Web API oficial
+Deploy: Replit (porta 5000)
+Funcionalidades Principais
+Geração de Playlists com IA: Sistema que recebe prompts em português e gera playlists personalizadas
+Integração Spotify: Criação automática de playlists na conta do usuário
+Autenticação Dupla: Replit Auth + Spotify OAuth
+Gerenciamento: CRUD completo de playlists geradas
+Busca e Preview: Sistema de busca de músicas com preview do Spotify
+Arquitetura da Aplicação
+Frontend (React + TypeScript)
+client/src/
+├── components/
+│   ├── ui/ (componentes shadcn/ui)
+│   ├── GeradorPlaylist.tsx
+│   ├── PreviewPlaylist.tsx
+│   ├── ConfiguracaoSpotify.tsx
+│   └── Header.tsx
+├── pages/
+│   ├── Home.tsx
+│   ├── Perfil.tsx
+│   ├── MinhasPlaylists.tsx
+│   └── ConfigSpotify.tsx
+├── hooks/
+│   ├── useAuth.ts
+│   ├── useSpotify.ts
+│   └── usePlaylist.ts
+└── lib/
+    ├── spotify.ts
+    ├── api.ts
+    └── utils.ts
+Backend (Express + TypeScript)
+server/
+├── routes/
+│   ├── auth.ts (Replit Auth)
+│   ├── spotify.ts (OAuth + API calls)
+│   ├── playlists.ts
+│   └── ai.ts (Perplexity integration)
+├── services/
+│   ├── SpotifyService.ts
+│   ├── AIService.ts
+│   └── PlaylistService.ts
+├── middleware/
+│   ├── auth.ts
+│   └── spotify.ts
+└── db/
+    ├── schema.ts
+    └── storage.ts
+Integração Spotify Web API
+Configuração OAuth 2.0
+Client ID/Secret: Configurar no Spotify Dashboard
+Redirect URI: https://seu-repl.replit.app/api/spotify/callback
+Scopes necessários:
+playlist-modify-public
+playlist-modify-private
+user-read-private
+user-read-email
+playlist-read-private
+Endpoints Spotify a implementar:
+// Autenticação
+POST /api/spotify/auth
+GET /api/spotify/callback
+GET /api/spotify/refresh
+// Playlists
+POST /api/spotify/playlists
+GET /api/spotify/playlists
+POST /api/spotify/playlists/:id/tracks
+// Busca
+GET /api/spotify/search
+GET /api/spotify/track/:id
+Schema do Banco de Dados (Drizzle)
+-- Usuários
+users (
+  id: text PRIMARY KEY,
+  email: text,
+  nome: text,
+  spotify_access_token: text,
+  spotify_refresh_token: text,
+  perplexity_api_key: text,
+  created_at: timestamp
+)
+-- Playlists
+playlists (
+  id: serial PRIMARY KEY,
+  user_id: text REFERENCES users(id),
+  nome: text,
+  descricao: text,
+  prompt_original: text,
+  spotify_playlist_id: text,
+  total_faixas: integer,
+  duracao_total: text,
+  created_at: timestamp
+)
+-- Faixas
+tracks (
+  id: serial PRIMARY KEY,
+  playlist_id: integer REFERENCES playlists(id),
+  spotify_track_id: text,
+  nome: text,
+  artista: text,
+  album: text,
+  duracao: integer,
+  preview_url: text,
+  posicao: integer
+)
+Interface do Usuário (pt-br)
+Página Principal - Gerador
+// Campos do formulário:
+- Textarea: "Descreva sua playlist ideal..."
+- Select: Tamanho (Curta: 15 faixas, Média: 25, Longa: 40)
+- Select: Nível de descoberta (Seguro: hits conhecidos, Aventureiro: indie/alternativo)
+- Checkbox: "Incluir conteúdo explícito"
+- Button: "Gerar Playlist"
+- Button: "Me Surpreenda!" (prompts aleatórios)
+Exemplos de Prompts (pt-br)
+- "música eletrônica para treinar na academia"
+- "samba e mpb para churrasco de domingo"
+- "indie rock nacional para trabalhar"
+- "hits internacionais dos anos 2000"
+- "lofi e jazz para estudar"
+- "forró e sertanejo para festa junina"
+Fluxo de Geração de Playlist
+Input do Usuário: Prompt em português + preferências
+Processamento IA: Perplexity API gera lista de músicas
+Busca Spotify: Para cada música, buscar no catálogo
+Criação: Playlist criada no Spotify do usuário
+Armazenamento: Dados salvos no PostgreSQL
+Feedback: Sucesso/falha para cada faixa adicionada
+Tratamento de Erros (pt-br)
+const mensagensErro = {
+  spotifyNaoConfigurado: "Configure sua conta Spotify primeiro",
+  playlistVazia: "Não foi possível gerar faixas para este prompt",
+  faixaNaoEncontrada: "Algumas músicas não foram encontradas no Spotify",
+  tokenExpirado: "Sua sessão Spotify expirou, faça login novamente",
+  limiteAPI: "Limite de requisições atingido, tente novamente em alguns minutos"
+}
+Configurações de Ambiente
+# Replit Auth
+REPLIT_AUTH_DOMAIN=
+REPLIT_AUTH_CLIENT_ID=
+# Spotify API
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
+SPOTIFY_REDIRECT_URI=
+# Perplexity AI
+PERPLEXITY_API_KEY=
+# Database
+DATABASE_URL=
+Features Avançadas a Implementar
+Preview de Áudio: Player inline com 30s de preview
+Análise Musical: Tempo, energia, dançabilidade das faixas
+Recomendações Relacionadas: "Playlists similares"
+Compartilhamento: Links públicos para playlists
+Histórico: Todas as playlists geradas pelo usuário
+Favoritos: Sistema de curtir playlists
+Considerações de UX (pt-br)
+Interface totalmente em português brasileiro
+Design inspirado no Spotify (verde #1DB954)
+Feedback visual durante geração (loading states)
+Mensagens de erro amigáveis
+Onboarding para configuração do Spotify
+Responsivo (mobile-first)
