@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Landing from "@/pages/Landing";
 import MinhasPlaylists from "@/pages/MinhasPlaylists";
 import ConfigSpotify from "@/pages/ConfigSpotify";
+import ConfiguracaoIA from "@/pages/ConfiguracaoIA";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/playlists" component={MinhasPlaylists} />
           <Route path="/config-spotify" component={ConfigSpotify} />
+          <Route path="/config-ia" component={ConfiguracaoIA} />
         </>
       )}
       <Route component={NotFound} />

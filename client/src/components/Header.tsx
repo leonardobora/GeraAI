@@ -59,13 +59,13 @@ export default function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 bg-spotify-card hover:bg-spotify-surface px-3 py-2 rounded-full">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={user?.profileImageUrl || undefined} />
+                      <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
                       <AvatarFallback className="bg-spotify-green text-spotify-dark">
-                        {user?.firstName?.[0] || user?.email?.[0] || 'U'}
+                        {(user as any)?.firstName?.[0] || (user as any)?.email?.[0] || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-white">
-                      {user?.firstName || user?.email?.split('@')[0] || 'Usuário'}
+                      {(user as any)?.firstName || (user as any)?.email?.split('@')[0] || 'Usuário'}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -80,6 +80,13 @@ export default function Header() {
                   >
                     <i className="fab fa-spotify mr-2"></i>
                     Configurar Spotify
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-spotify-text hover:text-white hover:bg-spotify-card"
+                    onClick={() => window.location.href = '/config-ia'}
+                  >
+                    <i className="fas fa-robot mr-2"></i>
+                    Configurar IA
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-spotify-card" />
                   <DropdownMenuItem 

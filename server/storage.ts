@@ -2,6 +2,7 @@ import {
   users,
   playlists,
   tracks,
+  sharedPlaylists,
   type User,
   type UpsertUser,
   type Playlist,
@@ -9,6 +10,8 @@ import {
   type Track,
   type InsertTrack,
   type PlaylistWithTracks,
+  type SharedPlaylist,
+  type InsertSharedPlaylist,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -18,6 +21,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserSpotifyTokens(userId: string, accessToken: string, refreshToken: string, spotifyUserId: string): Promise<void>;
+  updateUserAISettings(userId: string, aiProvider: string, apiKeys: Record<string, string>): Promise<void>;
   
   // Playlist operations
   createPlaylist(playlist: InsertPlaylist): Promise<Playlist>;
@@ -26,6 +30,11 @@ export interface IStorage {
   updatePlaylistSpotifyId(id: number, spotifyPlaylistId: string): Promise<void>;
   updatePlaylistMetadata(id: number, totalFaixas: number, duracaoTotal: string): Promise<void>;
   deletePlaylist(id: number): Promise<void>;
+  
+  // Sharing operations
+  createSharedPlaylist(shareData: InsertSharedPlaylist): Promise<SharedPlaylist>;
+  getSharedPlaylist(shareToken: string): Promise<(SharedPlaylist & { playlist: PlaylistWithTracks }) | undefined>;
+  deleteSharedPlaylist(playlistId: number): Promise<void>;
   
   // Track operations
   createTracks(tracks: InsertTrack[]): Promise<Track[]>;
@@ -116,6 +125,50 @@ export class DatabaseStorage implements IStorage {
       .update(playlists)
       .set({ totalFaixas, duracaoTotal })
       .where(eq(playlists.id, id));
+  }
+
+  async updateUserAISettings(userId: string, aiProvider: string, apiKeys: Record<string, string>): Promise<void> {
+    const updateData: any = { aiProvider };
+    
+    if (apiKeys.perplexityApiKey) updateData.perplexityApiKey = apiKeys.perplexityApiKey;
+    if (apiKeys.openaiApiKey) updateData.openaiApiKey = apiKeys.openaiApiKey;
+    if (apiKeys.geminiApiKey) updateData.geminiApiKey = apiKeys.geminiApiKey;
+    
+    await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId));
+  }
+
+  async createSharedPlaylist(shareData: InsertSharedPlaylist): Promise<SharedPlaylist> {
+    const [sharedPlaylist] = await db
+      .insert(sharedPlaylists)
+      .values(shareData)
+      .returning();
+    return sharedPlaylist;
+  }
+
+  async getSharedPlaylist(shareToken: string): Promise<(SharedPlaylist & { playlist: PlaylistWithTracks }) | undefined> {
+    const [shared] = await db
+      .select()
+      .from(sharedPlaylists)
+      .where(eq(sharedPlaylists.shareToken, shareToken));
+    
+    if (!shared) return undefined;
+
+    const playlist = await this.getPlaylistById(shared.playlistId);
+    if (!playlist) return undefined;
+
+    return {
+      ...shared,
+      playlist,
+    };
+  }
+
+  async deleteSharedPlaylist(playlistId: number): Promise<void> {
+    await db
+      .delete(sharedPlaylists)
+      .where(eq(sharedPlaylists.playlistId, playlistId));
   }
 
   async deletePlaylist(id: number): Promise<void> {

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { SpotifyService } from "./services/SpotifyService";
-import { AIService } from "./services/AIService";
+import { UniversalAIService } from "./services/UniversalAIService";
 import { PlaylistService } from "./services/PlaylistService";
 import { insertPlaylistSchema } from "@shared/schema";
 import { z } from "zod";
@@ -120,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const body = generatePlaylistSchema.parse(req.body);
       
       const playlistService = new PlaylistService();
-      const aiService = new AIService();
+      const universalAIService = new UniversalAIService();
       const spotifyService = new SpotifyService();
 
       // Generate playlist with AI
@@ -132,11 +132,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       );
 
-      // Get music recommendations from AI
-      const recommendations = await aiService.generateMusicRecommendations(
+      // Get music recommendations from AI with rate limiting and user settings
+      const recommendations = await universalAIService.generateMusicRecommendations(
+        userId,
         body.prompt,
         body.tamanho,
-        body.nivelDescoberta
+        body.nivelDescoberta,
+        body.conteudoExplicito,
+        {
+          aiProvider: user.aiProvider || undefined,
+          perplexityApiKey: user.perplexityApiKey || undefined,
+          openaiApiKey: user.openaiApiKey || undefined,
+          geminiApiKey: user.geminiApiKey || undefined,
+        }
       );
 
       // Search for tracks on Spotify
@@ -263,11 +271,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Acesso negado" });
       }
 
+      // Delete shared playlist if exists
+      await storage.deleteSharedPlaylist(playlistId);
       await storage.deletePlaylist(playlistId);
       res.json({ message: "Playlist deletada com sucesso" });
     } catch (error) {
       console.error("Erro ao deletar playlist:", error);
       res.status(500).json({ message: "Erro ao deletar playlist" });
+    }
+  });
+
+  // Share playlist
+  app.post('/api/playlists/:id/share', isAuthenticated, async (req: any, res) => {
+    try {
+      const playlistId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      // Verify ownership
+      const playlist = await storage.getPlaylistById(playlistId);
+      if (!playlist || playlist.userId !== userId) {
+        return res.status(404).json({ message: "Playlist não encontrada" });
+      }
+
+      // Generate unique share token
+      const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      const sharedPlaylist = await storage.createSharedPlaylist({
+        playlistId,
+        shareToken,
+        isPublic: true,
+      });
+
+      const shareUrl = `${req.protocol}://${req.get('host')}/shared/${shareToken}`;
+      
+      res.json({
+        shareToken,
+        shareUrl,
+        message: "Playlist compartilhada com sucesso!",
+      });
+    } catch (error) {
+      console.error("Erro ao compartilhar playlist:", error);
+      res.status(500).json({ message: "Erro ao compartilhar playlist" });
+    }
+  });
+
+  // Get shared playlist (public access)
+  app.get('/api/shared/:token', async (req, res) => {
+    try {
+      const shareToken = req.params.token;
+      const sharedPlaylist = await storage.getSharedPlaylist(shareToken);
+      
+      if (!sharedPlaylist) {
+        return res.status(404).json({ message: "Playlist compartilhada não encontrada" });
+      }
+
+      res.json(sharedPlaylist);
+    } catch (error) {
+      console.error("Erro ao buscar playlist compartilhada:", error);
+      res.status(500).json({ message: "Erro ao buscar playlist compartilhada" });
+    }
+  });
+
+  // Update user AI settings
+  app.put('/api/user/ai-settings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiProvider, apiKeys } = req.body;
+
+      const validProviders = ['perplexity', 'openai', 'gemini'];
+      if (!validProviders.includes(aiProvider)) {
+        return res.status(400).json({ message: "Provedor de IA inválido" });
+      }
+
+      await storage.updateUserAISettings(userId, aiProvider, apiKeys || {});
+      
+      res.json({ message: "Configurações de IA atualizadas com sucesso" });
+    } catch (error) {
+      console.error("Erro ao atualizar configurações:", error);
+      res.status(500).json({ message: "Erro ao atualizar configurações" });
+    }
+  });
+
+  // Get rate limit status
+  app.get('/api/user/rate-limit', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const universalAIService = new UniversalAIService();
+      const remaining = universalAIService.getRemainingRequests(userId);
+      
+      res.json({
+        remainingRequests: remaining,
+        maxRequests: 10, // Per hour
+        resetTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+      });
+    } catch (error) {
+      console.error("Erro ao verificar rate limit:", error);
+      res.status(500).json({ message: "Erro ao verificar limite de requisições" });
     }
   });
 

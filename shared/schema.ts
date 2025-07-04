@@ -35,7 +35,16 @@ export const users = pgTable("users", {
   spotifyAccessToken: text("spotify_access_token"),
   spotifyRefreshToken: text("spotify_refresh_token"),
   spotifyUserId: varchar("spotify_user_id"),
+  
+  // AI Provider Settings
+  aiProvider: varchar("ai_provider").default("perplexity"), // perplexity, openai, gemini
   perplexityApiKey: text("perplexity_api_key"),
+  openaiApiKey: text("openai_api_key"),
+  geminiApiKey: text("gemini_api_key"),
+  
+  // Rate Limiting
+  lastApiCall: timestamp("last_api_call"),
+  apiCallCount: integer("api_call_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -71,10 +80,21 @@ export const tracks = pgTable("tracks", {
   adicionadaComSucesso: boolean("adicionada_com_sucesso").default(true),
 });
 
+// Shared playlists table for public sharing
+export const sharedPlaylists = pgTable("shared_playlists", {
+  id: serial("id").primaryKey(),
+  playlistId: integer("playlist_id").references(() => playlists.id).notNull(),
+  shareToken: varchar("share_token").notNull().unique(),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"), // Optional expiration
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertPlaylistSchema = createInsertSchema(playlists);
 export const insertTrackSchema = createInsertSchema(tracks);
+export const insertSharedPlaylistSchema = createInsertSchema(sharedPlaylists);
 
 // Types
 export type UpsertUser = typeof users.$inferInsert;
@@ -83,6 +103,8 @@ export type InsertPlaylist = typeof playlists.$inferInsert;
 export type Playlist = typeof playlists.$inferSelect;
 export type InsertTrack = typeof tracks.$inferInsert;
 export type Track = typeof tracks.$inferSelect;
+export type InsertSharedPlaylist = typeof sharedPlaylists.$inferInsert;
+export type SharedPlaylist = typeof sharedPlaylists.$inferSelect;
 
 export type PlaylistWithTracks = Playlist & {
   tracks: Track[];

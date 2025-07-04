@@ -8,6 +8,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import SharePlaylistModal from "@/components/SharePlaylistModal";
 
 export default function MinhasPlaylists() {
   const [, setLocation] = useLocation();
@@ -121,6 +122,19 @@ export default function MinhasPlaylists() {
                           Abrir
                         </Button>
                       )}
+                      
+                      <SharePlaylistModal 
+                        playlistId={playlist.id} 
+                        playlistName={playlist.nome}
+                      >
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-spotify-card text-spotify-text hover:text-white"
+                        >
+                          <i className="fas fa-share-alt"></i>
+                        </Button>
+                      </SharePlaylistModal>
                       
                       <Button
                         onClick={() => handleDeletePlaylist(playlist.id)}
