@@ -24,6 +24,7 @@ export interface IStorage {
   getPlaylistsByUserId(userId: string): Promise<Playlist[]>;
   getPlaylistById(id: number): Promise<PlaylistWithTracks | undefined>;
   updatePlaylistSpotifyId(id: number, spotifyPlaylistId: string): Promise<void>;
+  updatePlaylistMetadata(id: number, totalFaixas: number, duracaoTotal: string): Promise<void>;
   deletePlaylist(id: number): Promise<void>;
   
   // Track operations
@@ -107,6 +108,13 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(playlists)
       .set({ spotifyPlaylistId })
+      .where(eq(playlists.id, id));
+  }
+
+  async updatePlaylistMetadata(id: number, totalFaixas: number, duracaoTotal: string): Promise<void> {
+    await db
+      .update(playlists)
+      .set({ totalFaixas, duracaoTotal })
       .where(eq(playlists.id, id));
   }
 

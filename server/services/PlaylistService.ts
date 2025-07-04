@@ -80,12 +80,12 @@ export class PlaylistService {
   }
 
   async updatePlaylistDuration(playlistId: number, tracks: any[]): Promise<void> {
+    const { storage } = await import('../storage');
     const totalSeconds = tracks.reduce((sum, track) => sum + (track.duracao || 0), 0);
     const duracaoTotal = this.formatDuration(totalSeconds);
     const totalFaixas = tracks.length;
 
     // Update playlist with calculated values
-    // This would require adding an update method to storage
-    // For now, we'll handle this in the route
+    await storage.updatePlaylistMetadata(playlistId, totalFaixas, duracaoTotal);
   }
 }

@@ -183,6 +183,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createTracks(trackData);
 
+      // Update playlist duration and track count
+      await playlistService.updatePlaylistDuration(playlistData.id, trackData);
+
       // Get complete playlist with tracks
       const completePlaylist = await storage.getPlaylistById(playlistData.id);
       
