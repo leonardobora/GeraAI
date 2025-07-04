@@ -222,6 +222,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/playlists/:id', isAuthenticated, async (req: any, res) => {
     try {
       const playlistId = parseInt(req.params.id);
+      
+      if (isNaN(playlistId) || playlistId <= 0) {
+        return res.status(400).json({ message: "ID de playlist inválido" });
+      }
+      
       const playlist = await storage.getPlaylistById(playlistId);
       
       if (!playlist) {
