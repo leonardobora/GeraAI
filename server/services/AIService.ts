@@ -31,6 +31,14 @@ export class AIService {
     1. Nome da Música - Nome do Artista
     2. Nome da Música - Nome do Artista
     
+    REGRAS IMPORTANTES:
+    - Use apenas músicas REAIS que existem no Spotify
+    - Prefira artistas conhecidos e populares
+    - Para lo-fi: Nujabes, J Dilla, GoGo Penguin, Bonobo, Emancipator, Tom Misch
+    - Para jazz: Miles Davis, John Coltrane, Bill Evans, Kamasi Washington
+    - Para estudo: Max Richter, Ólafur Arnalds, Nils Frahm, Kiasmos
+    - Use nomes exatos das músicas e artistas
+    
     ${discoveryPrompt}
     ${conteudoExplicito ? 'Pode incluir músicas com conteúdo explícito.' : 'Evite músicas com conteúdo explícito.'}
     

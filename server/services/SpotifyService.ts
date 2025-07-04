@@ -197,33 +197,62 @@ export class SpotifyService {
 
   async searchTracks(recommendations: string[], accessToken: string): Promise<SpotifyTrack[]> {
     const tracks: SpotifyTrack[] = [];
+    console.log(`Iniciando busca de ${recommendations.length} tracks no Spotify`);
     
     for (const recommendation of recommendations) {
       try {
-        const response = await fetch(
-          `https://api.spotify.com/v1/search?${new URLSearchParams({
-            q: recommendation,
-            type: 'track',
-            limit: '1',
-          })}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        );
+        console.log(`Buscando: ${recommendation}`);
+        
+        // Try multiple search strategies for better results
+        const searchQueries = [
+          recommendation, // Original query
+          recommendation.replace(' - ', ' '), // Remove dash
+          recommendation.split(' - ')[0], // Just artist name
+          recommendation.split(' - ')[1] || recommendation, // Just song name
+        ].filter(q => q && q.trim()); // Remove empty queries
+        
+        let found = false;
+        
+        for (const query of searchQueries) {
+          if (found) break;
+          
+          const response = await fetch(
+            `https://api.spotify.com/v1/search?${new URLSearchParams({
+              q: query,
+              type: 'track',
+              limit: '3', // Get more results to find better matches
+            })}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
+            }
+          );
 
-        if (response.ok) {
-          const data: SpotifySearchResult = await response.json();
-          if (data.tracks.items.length > 0) {
-            tracks.push(data.tracks.items[0]);
+          if (response.ok) {
+            const data: SpotifySearchResult = await response.json();
+            console.log(`Busca "${query}":`, data.tracks.items.length, 'resultados');
+            
+            if (data.tracks.items.length > 0) {
+              tracks.push(data.tracks.items[0]);
+              console.log(`Track encontrado: ${data.tracks.items[0].name} - ${data.tracks.items[0].artists[0].name}`);
+              found = true;
+            }
+          } else {
+            console.error(`Erro HTTP ${response.status} ao buscar: ${query}`);
           }
         }
+        
+        if (!found) {
+          console.log(`Nenhum resultado para qualquer variação de: ${recommendation}`);
+        }
+        
       } catch (error) {
         console.error(`Erro ao buscar track: ${recommendation}`, error);
       }
     }
 
+    console.log(`Total de tracks encontrados: ${tracks.length} de ${recommendations.length}`);
     return tracks;
   }
 

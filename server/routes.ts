@@ -155,12 +155,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Search for tracks on Spotify
+      console.log('Iniciando busca de tracks no Spotify com', recommendations.length, 'recomendações');
       const tracks = await spotifyService.searchTracks(
         recommendations,
         user.spotifyAccessToken
       );
 
+      console.log(`Busca concluída: ${tracks.length} tracks encontrados de ${recommendations.length} recomendações`);
+      
       if (tracks.length === 0) {
+        console.error('Nenhuma track foi encontrada no Spotify');
         return res.status(400).json({ message: "Não foi possível gerar faixas para este prompt" });
       }
 
