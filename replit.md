@@ -97,6 +97,10 @@ Changelog:
 - July 04, 2025. Database and Perplexity AI integration completed  
 - July 04, 2025. Spotify Developer App configured with credentials
 - July 04, 2025. All integrations complete - Application ready for deployment
+- July 04, 2025. Application deployed to production - Spotify redirect URI needs configuration
+- July 04, 2025. Fixed Perplexity API model to valid 'sonar' model for 2025
+- July 04, 2025. Improved Spotify search with multiple query strategies
+- July 04, 2025. Added specific error handling for redirect URI configuration
 
 ## User Preferences
 

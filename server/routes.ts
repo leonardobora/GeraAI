@@ -83,12 +83,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.redirect('/config-spotify?spotify=auth-error');
         } else if (error.message.includes('Token')) {
           res.redirect('/config-spotify?spotify=token-error');
+        } else if (error.message.includes('INVALID_CLIENT') || error.message.includes('Invalid redirect URI')) {
+          res.redirect('/config-spotify?spotify=redirect-error');
         } else {
           res.redirect('/config-spotify?spotify=error&message=' + encodeURIComponent(error.message));
         }
       } else {
         res.redirect('/config-spotify?spotify=error');
       }
+    }
+  });
+
+  app.get('/api/spotify/info', async (req, res) => {
+    try {
+      const spotifyService = new SpotifyService();
+      const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+      const redirectUri = `https://${domain}/api/spotify/callback`;
+      
+      res.json({
+        redirectUri,
+        authUrl: spotifyService.getAuthUrl(),
+        currentDomain: domain
+      });
+    } catch (error) {
+      console.error("Erro ao obter informações do Spotify:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
 

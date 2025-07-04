@@ -41,7 +41,7 @@ export default function ConfigSpotify() {
     const urlParams = new URLSearchParams(window.location.search);
     const spotifyStatus = urlParams.get('spotify');
     
-    if (spotifyStatus && ['error', 'auth-error', 'token-error', 'registration-error'].includes(spotifyStatus)) {
+    if (spotifyStatus && ['error', 'auth-error', 'token-error', 'registration-error', 'redirect-error'].includes(spotifyStatus)) {
       setHasSpotifyError(true);
       setErrorType(spotifyStatus);
       
@@ -57,6 +57,9 @@ export default function ConfigSpotify() {
       } else if (spotifyStatus === 'token-error') {
         title = "Token expirado";
         description = "O token de acesso expirou. Clique em reconectar para gerar um novo token.";
+      } else if (spotifyStatus === 'redirect-error') {
+        title = "URL de callback não configurada";
+        description = "A URL de callback não está configurada no Spotify Developer Dashboard. É necessário adicionar a URL de produção nas configurações.";
       } else {
         const errorMessage = urlParams.get('message');
         if (errorMessage) {
@@ -139,6 +142,20 @@ export default function ConfigSpotify() {
                     Sua sessão com o Spotify expirou e precisa ser renovada.
                     <br /><br />
                     <strong className="text-white">Solução:</strong> Clique em "Desconectar Spotify" e depois "Conectar com Spotify" para renovar.
+                  </>
+                ) : errorType === 'redirect-error' ? (
+                  <>
+                    <strong className="text-spotify-error">URL de Callback Não Configurada:</strong><br />
+                    A aplicação foi feita deploy mas a URL de produção não está configurada no Spotify Developer.
+                    <br /><br />
+                    <strong className="text-white">Como resolver:</strong>
+                    <ol className="mt-2 ml-4 space-y-1">
+                      <li>1. Acesse o <a href="https://developer.spotify.com/dashboard" target="_blank" className="text-blue-400 underline">Spotify Developer Dashboard</a></li>
+                      <li>2. Clique no aplicativo "Gerador de Playlists"</li>
+                      <li>3. Vá em "Settings" → "Redirect URIs"</li>
+                      <li>4. Adicione: <code className="bg-gray-800 px-1">https://criador-playlist.replit.app/api/spotify/callback</code></li>
+                      <li>5. Clique em "Save" e tente conectar novamente</li>
+                    </ol>
                   </>
                 ) : (
                   <>

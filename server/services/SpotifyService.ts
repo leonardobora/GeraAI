@@ -52,6 +52,8 @@ export class SpotifyService {
     // Set redirect URI based on current domain
     const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
     this.redirectUri = `https://${domain}/api/spotify/callback`;
+    
+    console.log('Spotify Redirect URI configurado:', this.redirectUri);
 
     if (!this.clientId || !this.clientSecret) {
       throw new Error("Spotify client ID e secret são obrigatórios");
