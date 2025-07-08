@@ -112,9 +112,9 @@ export default function GeradorPlaylist() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-spotify-surface border-spotify-card">
-                          <SelectItem value="curta">Curta (15 faixas)</SelectItem>
-                          <SelectItem value="media">Média (25 faixas)</SelectItem>
-                          <SelectItem value="longa">Longa (40 faixas)</SelectItem>
+                          <SelectItem value="curta" className="text-white hover:bg-spotify-card focus:bg-spotify-card">Curta (15 faixas)</SelectItem>
+                          <SelectItem value="media" className="text-white hover:bg-spotify-card focus:bg-spotify-card">Média (25 faixas)</SelectItem>
+                          <SelectItem value="longa" className="text-white hover:bg-spotify-card focus:bg-spotify-card">Longa (40 faixas)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -137,8 +137,8 @@ export default function GeradorPlaylist() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-spotify-surface border-spotify-card">
-                          <SelectItem value="seguro">Seguro (hits conhecidos)</SelectItem>
-                          <SelectItem value="aventureiro">Aventureiro (indie/alternativo)</SelectItem>
+                          <SelectItem value="seguro" className="text-white hover:bg-spotify-card focus:bg-spotify-card">Seguro (hits conhecidos)</SelectItem>
+                          <SelectItem value="aventureiro" className="text-white hover:bg-spotify-card focus:bg-spotify-card">Aventureiro (indie/alternativo)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -179,7 +179,7 @@ export default function GeradorPlaylist() {
                   {isGenerating ? (
                     <>
                       <div className="animate-spin w-4 h-4 border-2 border-spotify-dark border-t-transparent rounded-full mr-2"></div>
-                      Gerando...
+                      Criando playlist...
                     </>
                   ) : (
                     <>

@@ -243,6 +243,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // More specific error handling
+      if (error instanceof Error) {
+        if (error.message.includes('Não foi possível gerar faixas')) {
+          return res.status(400).json({ message: error.message });
+        }
+        if (error.message.includes('Token')) {
+          return res.status(401).json({ message: "Token Spotify expirado. Reconecte sua conta." });
+        }
+        if (error.message.includes('INVALID_CLIENT')) {
+          return res.status(400).json({ message: "Configuração do Spotify inválida. Verifique o dashboard." });
+        }
+        if (error.message.includes('rate limit')) {
+          return res.status(429).json({ message: "Limite de requisições excedido. Tente novamente em alguns minutos." });
+        }
+        if (error.message.includes('401')) {
+          return res.status(401).json({ message: "Token expirado. Reconecte sua conta Spotify." });
+        }
+        if (error.message.includes('429')) {
+          return res.status(429).json({ message: "Spotify temporariamente indisponível. Tente novamente." });
+        }
+      }
+
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
@@ -334,9 +356,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const shareUrl = `${req.protocol}://${req.get('host')}/shared/${shareToken}`;
       
+      // Generate Spotify playlist URL if available
+      let spotifyUrl = null;
+      if (playlist.spotifyPlaylistId) {
+        spotifyUrl = `https://open.spotify.com/playlist/${playlist.spotifyPlaylistId}`;
+      }
+      
       res.json({
         shareToken,
         shareUrl,
+        spotifyUrl,
         message: "Playlist compartilhada com sucesso!",
       });
     } catch (error) {

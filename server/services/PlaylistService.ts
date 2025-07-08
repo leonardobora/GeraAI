@@ -36,36 +36,43 @@ export class PlaylistService {
   }
 
   private generatePlaylistName(prompt: string): string {
-    // Extract key themes from prompt and create a name
+    // Generate intelligent name based on prompt content
     const lowerPrompt = prompt.toLowerCase();
     
-    // Common themes and their corresponding names
+    // Specific themes for better matching
     const themes = [
+      { keywords: ['rave', 'festa', 'mdma', 'pós-festa', 'manhã', 'sol', 'óculos'], name: 'Pós-Rave Sunrise ☀️' },
+      { keywords: ['café', 'matinal', 'manhã', 'acordar', 'pós'], name: 'Café da Manhã 🌅' },
+      { keywords: ['dirigir', 'estrada', 'carro', 'viagem', 'amigos', 'casa'], name: 'Road Trip 🚗' },
       { keywords: ['treino', 'academia', 'exercício', 'malhar'], name: 'Treino Pesado 💪' },
-      { keywords: ['trabalho', 'trabalhar', 'foco', 'concentração'], name: 'Foco no Trabalho 🎯' },
-      { keywords: ['churrasco', 'domingo', 'família', 'amigos'], name: 'Churrasco de Domingo 🔥' },
-      { keywords: ['estudo', 'estudar', 'ler', 'concentrar'], name: 'Estudo Concentrado 📚' },
-      { keywords: ['festa', 'dança', 'balada', 'diversão'], name: 'Festa Animada 🎉' },
+      { keywords: ['trabalho', 'trabalhar', 'foco', 'concentração'], name: 'Foco Total 🎯' },
+      { keywords: ['estudo', 'estudar', 'ler', 'concentrar'], name: 'Estudo Intenso 📚' },
       { keywords: ['relaxar', 'descanso', 'tranquilo', 'calma'], name: 'Momento Zen 🧘' },
-      { keywords: ['viagem', 'estrada', 'road trip', 'dirigir'], name: 'Estrada Afora 🚗' },
-      { keywords: ['samba', 'mpb', 'brasileiro', 'brasil'], name: 'Raízes Brasileiras 🇧🇷' },
       { keywords: ['rock', 'metal', 'heavy'], name: 'Rock Pesado 🤘' },
       { keywords: ['eletrônica', 'eletro', 'house', 'techno'], name: 'Batida Eletrônica ⚡' },
+      { keywords: ['samba', 'mpb', 'brasileiro', 'brasil'], name: 'Raízes Brasileiras 🇧🇷' },
+      { keywords: ['jazz', 'blues', 'clássico'], name: 'Jazz & Blues 🎷' },
+      { keywords: ['lofi', 'chill', 'ambient'], name: 'Lo-Fi Vibes 🌙' },
     ];
 
+    // Check for specific themes first
     for (const theme of themes) {
       if (theme.keywords.some(keyword => lowerPrompt.includes(keyword))) {
         return theme.name;
       }
     }
 
-    // If no theme matches, create a generic name
-    const words = prompt.split(' ').slice(0, 3);
-    const capitalizedWords = words.map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    );
+    // Generate creative name from key words
+    const words = prompt.split(' ')
+      .filter(word => word.length > 3) // Filter short words
+      .slice(0, 3) // Take first 3 meaningful words
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
     
-    return capitalizedWords.join(' ') + ' 🎵';
+    if (words.length >= 2) {
+      return words.join(' ') + ' 🎵';
+    }
+    
+    return 'Playlist Personalizada 🎵';
   }
 
   formatDuration(totalSeconds: number): string {

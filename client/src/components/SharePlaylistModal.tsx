@@ -21,6 +21,7 @@ interface SharePlaylistModalProps {
 export default function SharePlaylistModal({ playlistId, playlistName, children }: SharePlaylistModalProps) {
   const { toast } = useToast();
   const [shareUrl, setShareUrl] = useState("");
+  const [spotifyUrl, setSpotifyUrl] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -41,6 +42,7 @@ export default function SharePlaylistModal({ playlistId, playlistName, children 
       }
 
       setShareUrl(data.shareUrl);
+      setSpotifyUrl(data.spotifyUrl || "");
       
       toast({
         title: "Playlist compartilhada!",
@@ -102,11 +104,25 @@ export default function SharePlaylistModal({ playlistId, playlistName, children 
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Spotify Direct Link */}
+          {spotifyUrl && (
+            <div className="space-y-2">
+              <label className="text-white font-medium">Abrir no Spotify</label>
+              <Button
+                onClick={() => window.open(spotifyUrl, '_blank')}
+                className="w-full bg-spotify-green hover:bg-spotify-green-light text-spotify-dark font-semibold"
+              >
+                <i className="fab fa-spotify mr-2"></i>
+                Abrir Playlist no Spotify
+              </Button>
+            </div>
+          )}
+
           {!shareUrl ? (
             <Button
               onClick={handleShare}
               disabled={isSharing}
-              className="w-full bg-spotify-green hover:bg-spotify-green-light text-spotify-dark font-semibold"
+              className="w-full bg-spotify-card hover:bg-spotify-card/80 text-white border border-spotify-green"
             >
               {isSharing ? (
                 <>

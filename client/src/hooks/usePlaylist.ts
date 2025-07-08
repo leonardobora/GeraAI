@@ -72,10 +72,23 @@ export function usePlaylist() {
       }
       
       let message = "Erro ao gerar playlist";
+      
       if (error.message.includes("Configure sua conta Spotify")) {
         message = "Configure sua conta Spotify primeiro";
       } else if (error.message.includes("Não foi possível gerar faixas")) {
         message = "Não foi possível gerar faixas para este prompt";
+      } else if (error.message.includes("Não foi possível encontrar nenhuma música")) {
+        message = "Não foi possível encontrar músicas no Spotify. Tente um prompt diferente.";
+      } else if (error.message.includes("Token expirado")) {
+        message = "Sua sessão Spotify expirou. Reconecte sua conta.";
+      } else if (error.message.includes("Limite de requisições")) {
+        message = "Muitas requisições. Aguarde alguns minutos e tente novamente.";
+      } else if (error.message.includes("Spotify temporariamente indisponível")) {
+        message = "Spotify temporariamente indisponível. Tente novamente em alguns minutos.";
+      } else if (error.message.includes("Serviço de IA temporariamente indisponível")) {
+        message = "Serviço de IA temporariamente indisponível. Tente novamente.";
+      } else if (error.message.includes("500")) {
+        message = "Erro interno do servidor. Tente novamente.";
       }
       
       toast({

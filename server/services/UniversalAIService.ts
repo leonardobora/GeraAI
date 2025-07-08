@@ -61,7 +61,24 @@ Responda apenas com uma lista numerada de ${numberOfTracks} músicas no formato:
       
       return recommendations;
     } catch (error) {
-      throw new Error("Erro ao gerar recomendações com Perplexity");
+      console.error("Erro detalhado ao gerar recomendações:", error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('rate limit')) {
+          throw new Error("Limite de requisições excedido. Tente novamente em alguns minutos.");
+        }
+        if (error.message.includes('401')) {
+          throw new Error("Chave de API inválida. Verifique a configuração do Perplexity.");
+        }
+        if (error.message.includes('429')) {
+          throw new Error("Serviço de IA temporariamente indisponível. Tente novamente.");
+        }
+        if (error.message.includes('network')) {
+          throw new Error("Erro de conexão. Verifique sua internet e tente novamente.");
+        }
+      }
+      
+      throw new Error("Erro ao gerar recomendações com IA. Tente novamente.");
     }
   }
 

@@ -99,15 +99,15 @@ export default function MinhasPlaylists() {
                       )}
                     </div>
                     
-                    <h3 className="font-bold mb-2 text-white truncate" title={playlist.nome}>
+                    <h3 className="font-bold mb-2 text-white text-outlined-thin truncate" title={playlist.nome}>
                       {playlist.nome}
                     </h3>
                     
-                    <p className="text-sm text-spotify-text mb-2">
+                    <p className="text-sm text-white text-outlined-thin mb-2">
                       {playlist.totalFaixas} faixas • {playlist.duracaoTotal || "0min"}
                     </p>
                     
-                    <p className="text-xs text-spotify-text mb-4">
+                    <p className="text-xs text-white text-outlined-thin mb-4">
                       Criada em {new Date(playlist.createdAt).toLocaleDateString('pt-BR')}
                     </p>
                     

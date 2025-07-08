@@ -115,7 +115,16 @@ export class SpotifyService {
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao renovar token: ${response.status}`);
+      const errorData = await response.text();
+      console.error(`Erro ao renovar token Spotify:`, response.status, errorData);
+      
+      if (response.status === 400) {
+        throw new Error('Refresh token inválido ou expirado. Reconecte sua conta Spotify.');
+      } else if (response.status === 401) {
+        throw new Error('Credenciais Spotify inválidas. Verifique a configuração do aplicativo.');
+      } else {
+        throw new Error(`Erro ao renovar token: ${response.status}`);
+      }
     }
 
     return await response.json();
@@ -218,30 +227,43 @@ export class SpotifyService {
         for (const query of searchQueries) {
           if (found) break;
           
-          const response = await fetch(
-            `https://api.spotify.com/v1/search?${new URLSearchParams({
-              q: query,
-              type: 'track',
-              limit: '3', // Get more results to find better matches
-            })}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-              },
-            }
-          );
+          try {
+            const response = await fetch(
+              `https://api.spotify.com/v1/search?${new URLSearchParams({
+                q: query,
+                type: 'track',
+                limit: '3', // Get more results to find better matches
+              })}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                },
+              }
+            );
 
-          if (response.ok) {
-            const data: SpotifySearchResult = await response.json();
-            console.log(`Busca "${query}":`, data.tracks.items.length, 'resultados');
-            
-            if (data.tracks.items.length > 0) {
-              tracks.push(data.tracks.items[0]);
-              console.log(`Track encontrado: ${data.tracks.items[0].name} - ${data.tracks.items[0].artists[0].name}`);
-              found = true;
+            if (response.ok) {
+              const data: SpotifySearchResult = await response.json();
+              console.log(`Busca "${query}":`, data.tracks.items.length, 'resultados');
+              
+              if (data.tracks.items.length > 0) {
+                tracks.push(data.tracks.items[0]);
+                console.log(`Track encontrado: ${data.tracks.items[0].name} - ${data.tracks.items[0].artists[0].name}`);
+                found = true;
+              }
+            } else if (response.status === 429) {
+              console.log(`Rate limit atingido, aguardando 1 segundo...`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            } else if (response.status === 401) {
+              throw new Error('Token Spotify expirado');
+            } else {
+              console.error(`Erro HTTP ${response.status} ao buscar: ${query}`);
             }
-          } else {
-            console.error(`Erro HTTP ${response.status} ao buscar: ${query}`);
+          } catch (error) {
+            console.error(`Erro ao buscar "${query}":`, error);
+            if (error instanceof Error && error.message.includes('Token')) {
+              throw error;
+            }
           }
         }
         
@@ -255,6 +277,16 @@ export class SpotifyService {
     }
 
     console.log(`Total de tracks encontrados: ${tracks.length} de ${recommendations.length}`);
+    
+    // Check if we have enough tracks for a reasonable playlist
+    if (tracks.length === 0) {
+      throw new Error('Não foi possível encontrar nenhuma música no Spotify. Tente um prompt diferente.');
+    }
+    
+    if (tracks.length < Math.ceil(recommendations.length * 0.3)) {
+      console.warn(`Apenas ${tracks.length} de ${recommendations.length} tracks encontrados. Playlist pode ser pequena.`);
+    }
+    
     return tracks;
   }
 
