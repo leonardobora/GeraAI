@@ -198,12 +198,16 @@ A aplicação estará disponível em `http://localhost:5000`
 
 ### Tela Principal
 Interface limpa e intuitiva para descrição da playlist desejada.
+![image](https://github.com/user-attachments/assets/d82b2683-2a03-40ba-b1fc-4b44c2ce94f3)
 
 ### Configurações Avançadas
 Controles detalhados para personalizar completamente a experiência musical.
+![image](https://github.com/user-attachments/assets/716f413c-1b4e-4b9f-a0da-619390bb7589)
+![image](https://github.com/user-attachments/assets/9c6d1590-7410-42a8-a45d-46a71cc34324)
 
 ### Gerenciamento de Playlists
 Visualização horizontal moderna com acesso rápido às ações.
+![image](https://github.com/user-attachments/assets/c33d3bdf-5cd8-42f7-87c4-a24b8ed3f175)
 
 ---
 
