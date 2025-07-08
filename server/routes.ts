@@ -188,23 +188,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create playlist on Spotify
-      console.log(`Criando playlist no Spotify: ${playlistData.nome}`);
       const spotifyPlaylist = await spotifyService.createPlaylist(
         user.spotifyAccessToken,
         playlistData.nome,
         playlistData.descricao || ""
       );
-      console.log(`Playlist criada com sucesso no Spotify. ID: ${spotifyPlaylist.id}`);
 
       // Add tracks to Spotify playlist
       const trackUris = tracks.map(track => track.uri);
-      console.log(`Adicionando ${trackUris.length} faixas à playlist ${spotifyPlaylist.id}`);
       await spotifyService.addTracksToPlaylist(
         user.spotifyAccessToken,
         spotifyPlaylist.id,
         trackUris
       );
-      console.log(`Faixas adicionadas com sucesso à playlist`);
 
       // Update playlist with Spotify ID
       await storage.updatePlaylistSpotifyId(playlistData.id, spotifyPlaylist.id);
