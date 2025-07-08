@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Home from "@/pages/Home";
 import Landing from "@/pages/Landing";
 import MinhasPlaylists from "@/pages/MinhasPlaylists";
+import PlaylistCompartilhada from "@/pages/PlaylistCompartilhada";
 import ConfigSpotify from "@/pages/ConfigSpotify";
 import ConfiguracaoIA from "@/pages/ConfiguracaoIA";
 import NotFound from "@/pages/not-found";
@@ -26,6 +27,7 @@ function Router() {
           <Route path="/config-ia" component={ConfiguracaoIA} />
         </>
       )}
+      <Route path="/shared/:token" component={PlaylistCompartilhada} />
       <Route component={NotFound} />
     </Switch>
   );

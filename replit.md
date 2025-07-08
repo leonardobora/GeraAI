@@ -93,6 +93,9 @@ This is a full-stack web application that generates personalized Spotify playlis
 ## Changelog
 
 Changelog:
+- July 08, 2025. Added expand/collapse functionality to view individual tracks within playlists with Spotify links
+- July 08, 2025. Created public playlist sharing page at /shared/:token route for shared playlist viewing
+- July 08, 2025. Implemented comprehensive monetization strategy document with Stripe integration plans
 - July 08, 2025. Enhanced playlist name generation with intelligent keyword extraction and proper noun detection
 - July 08, 2025. Redesigned "Minhas Playlists" page with horizontal list layout instead of card grid
 - July 08, 2025. Updated header with music icon and new app name "Gera AÍ: Playlists com IA"

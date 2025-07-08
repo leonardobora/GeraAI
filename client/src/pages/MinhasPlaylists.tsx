@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
 import { usePlaylist } from "@/hooks/usePlaylist";
@@ -9,12 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SharePlaylistModal from "@/components/SharePlaylistModal";
+import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 export default function MinhasPlaylists() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const { playlists, isLoadingPlaylists, deletePlaylist, isDeleting } = usePlaylist();
+  const [expandedPlaylist, setExpandedPlaylist] = useState<number | null>(null);
+
+  // Hook para buscar tracks de uma playlist específica
+  const { data: playlistTracks, isLoading: isLoadingTracks } = useQuery({
+    queryKey: ['/api/playlists', expandedPlaylist],
+    queryFn: () => expandedPlaylist ? api.getPlaylist(expandedPlaylist) : null,
+    enabled: !!expandedPlaylist,
+  });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -38,6 +48,21 @@ export default function MinhasPlaylists() {
 
   const openSpotifyPlaylist = (spotifyPlaylistId: string) => {
     window.open(`https://open.spotify.com/playlist/${spotifyPlaylistId}`, '_blank');
+  };
+
+  const openSpotifyTrack = (spotifyTrackId: string) => {
+    const spotifyUrl = `https://open.spotify.com/track/${spotifyTrackId}`;
+    window.open(spotifyUrl, '_blank');
+  };
+
+  const togglePlaylistExpansion = (playlistId: number) => {
+    setExpandedPlaylist(expandedPlaylist === playlistId ? null : playlistId);
+  };
+
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   if (isLoading) {
@@ -119,6 +144,14 @@ export default function MinhasPlaylists() {
 
                     {/* Right Side: Action Buttons */}
                     <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => togglePlaylistExpansion(playlist.id)}
+                        className="bg-spotify-surface hover:bg-spotify-green text-white border border-spotify-card hover:border-spotify-green h-10 w-10 rounded-lg transition-all duration-200 flex items-center justify-center"
+                        title={expandedPlaylist === playlist.id ? "Recolher músicas" : "Ver músicas"}
+                      >
+                        <i className={`fas ${expandedPlaylist === playlist.id ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                      </button>
+
                       {playlist.spotifyPlaylistId && (
                         <Button
                           onClick={() => openSpotifyPlaylist(playlist.spotifyPlaylistId)}
@@ -151,6 +184,74 @@ export default function MinhasPlaylists() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Expanded Tracks Section */}
+                  {expandedPlaylist === playlist.id && (
+                    <div className="mt-4 border-t border-spotify-card pt-4">
+                      {isLoadingTracks ? (
+                        <div className="space-y-2">
+                          {[...Array(5)].map((_, i) => (
+                            <div key={i} className="flex items-center space-x-3 p-2">
+                              <Skeleton className="w-8 h-8 bg-spotify-surface rounded" />
+                              <div className="flex-1">
+                                <Skeleton className="h-4 bg-spotify-surface rounded mb-1 w-1/2" />
+                                <Skeleton className="h-3 bg-spotify-surface rounded w-1/3" />
+                              </div>
+                              <Skeleton className="w-16 h-6 bg-spotify-surface rounded" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : playlistTracks?.tracks && playlistTracks.tracks.length > 0 ? (
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                          {playlistTracks.tracks.map((track, index) => (
+                            <div
+                              key={track.id}
+                              className="flex items-center justify-between p-3 bg-spotify-surface/50 rounded-lg hover:bg-spotify-card transition-colors"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-spotify-green/20 rounded flex items-center justify-center text-sm font-medium text-spotify-green">
+                                  {index + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-medium text-white text-sm">{track.nome}</div>
+                                  <div className="text-spotify-text text-xs">{track.artista}</div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-3">
+                                <span className="text-spotify-text text-sm">
+                                  {formatDuration(track.duracao)}
+                                </span>
+                                
+                                {track.previewUrl && (
+                                  <button
+                                    onClick={() => window.open(track.previewUrl, '_blank')}
+                                    className="text-spotify-green hover:text-spotify-green-light transition-colors"
+                                    title="Preview da música"
+                                  >
+                                    <i className="fas fa-play text-sm"></i>
+                                  </button>
+                                )}
+                                
+                                <button
+                                  onClick={() => openSpotifyTrack(track.spotifyTrackId || '')}
+                                  className="text-spotify-green hover:text-spotify-green-light transition-colors"
+                                  title="Abrir no Spotify"
+                                >
+                                  <i className="fab fa-spotify text-sm"></i>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-spotify-text">
+                          <i className="fas fa-music text-2xl mb-2"></i>
+                          <div>Nenhuma música encontrada</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
