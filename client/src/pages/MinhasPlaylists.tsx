@@ -69,56 +69,62 @@ export default function MinhasPlaylists() {
           </div>
 
           {isLoadingPlaylists ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <Card key={i} className="bg-spotify-card border-spotify-card">
-                  <CardContent className="p-4">
-                    <Skeleton className="w-full h-40 mb-4 bg-spotify-surface" />
-                    <Skeleton className="h-4 w-3/4 mb-2 bg-spotify-surface" />
-                    <Skeleton className="h-3 w-1/2 bg-spotify-surface" />
-                  </CardContent>
-                </Card>
+            <div className="space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-spotify-card rounded-xl p-4 animate-pulse flex items-center justify-between border border-spotify-card">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="w-12 h-12 bg-spotify-surface rounded-lg" />
+                    <div>
+                      <Skeleton className="h-4 bg-spotify-surface rounded mb-2 w-48" />
+                      <Skeleton className="h-3 bg-spotify-surface rounded w-32" />
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Skeleton className="w-20 h-8 bg-spotify-surface rounded" />
+                    <Skeleton className="w-8 h-8 bg-spotify-surface rounded" />
+                    <Skeleton className="w-8 h-8 bg-spotify-surface rounded" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : playlists && playlists.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="space-y-4">
               {playlists.map((playlist) => (
-                <Card key={playlist.id} className="bg-spotify-card border-spotify-card hover:bg-spotify-surface transition-colors group">
-                  <CardContent className="p-4">
-                    <div className="relative mb-4">
-                      <div className="w-full h-40 bg-gradient-to-br from-spotify-green to-spotify-green-light rounded-lg flex items-center justify-center">
-                        <i className="fas fa-music text-spotify-dark text-3xl"></i>
+                <div
+                  key={playlist.id}
+                  className="bg-gradient-to-r from-spotify-card to-spotify-surface rounded-xl p-4 hover:from-spotify-surface hover:to-spotify-card transition-all duration-300 border border-spotify-card/50 hover:border-spotify-green/30"
+                >
+                  <div className="flex items-center justify-between">
+                    {/* Left Side: Icon + Info */}
+                    <div className="flex items-center space-x-4">
+                      {/* Playlist Icon */}
+                      <div className="w-12 h-12 bg-spotify-green/20 rounded-lg flex items-center justify-center text-2xl border border-spotify-green/30">
+                        {playlist.nome.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27FF]/g)?.[0] || '🎵'}
                       </div>
-                      {playlist.spotifyPlaylistId && (
-                        <button
-                          onClick={() => openSpotifyPlaylist(playlist.spotifyPlaylistId)}
-                          className="absolute bottom-2 right-2 bg-spotify-green hover:bg-spotify-green-light text-spotify-dark w-10 h-10 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <i className="fab fa-spotify"></i>
-                        </button>
-                      )}
+                      
+                      {/* Playlist Info */}
+                      <div>
+                        <h3 className="font-bold text-white text-lg mb-1" title={playlist.nome}>
+                          {playlist.nome}
+                        </h3>
+                        <div className="flex items-center space-x-4 text-sm text-spotify-text">
+                          <span>{playlist.totalFaixas} faixas</span>
+                          <span>•</span>
+                          <span>{playlist.duracaoTotal || "0min"}</span>
+                          <span>•</span>
+                          <span>Criada em {new Date(playlist.createdAt).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <h3 className="font-bold mb-2 text-white text-outlined-thin truncate" title={playlist.nome}>
-                      {playlist.nome}
-                    </h3>
-                    
-                    <p className="text-sm text-white text-outlined-thin mb-2">
-                      {playlist.totalFaixas} faixas • {playlist.duracaoTotal || "0min"}
-                    </p>
-                    
-                    <p className="text-xs text-white text-outlined-thin mb-4">
-                      Criada em {new Date(playlist.createdAt).toLocaleDateString('pt-BR')}
-                    </p>
-                    
-                    <div className="flex gap-2">
+
+                    {/* Right Side: Action Buttons */}
+                    <div className="flex items-center space-x-3">
                       {playlist.spotifyPlaylistId && (
                         <Button
                           onClick={() => openSpotifyPlaylist(playlist.spotifyPlaylistId)}
-                          size="sm"
-                          className="flex-1 bg-spotify-green hover:bg-spotify-green-light text-spotify-dark"
+                          className="bg-spotify-green hover:bg-spotify-green-light text-spotify-dark font-medium px-6 py-2 transition-all duration-200"
                         >
-                          <i className="fab fa-spotify mr-1"></i>
+                          <i className="fab fa-spotify mr-2"></i>
                           Abrir
                         </Button>
                       )}
@@ -127,27 +133,25 @@ export default function MinhasPlaylists() {
                         playlistId={playlist.id} 
                         playlistName={playlist.nome}
                       >
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-spotify-card text-spotify-text hover:text-white"
+                        <button
+                          className="bg-spotify-surface hover:bg-spotify-green text-white border border-spotify-card hover:border-spotify-green h-10 w-10 rounded-lg transition-all duration-200 flex items-center justify-center"
+                          title="Compartilhar"
                         >
                           <i className="fas fa-share-alt"></i>
-                        </Button>
+                        </button>
                       </SharePlaylistModal>
                       
-                      <Button
+                      <button
                         onClick={() => handleDeletePlaylist(playlist.id)}
-                        size="sm"
-                        variant="destructive"
                         disabled={isDeleting}
-                        className="bg-spotify-error hover:bg-red-600"
+                        className="bg-spotify-error hover:bg-red-600 text-white border border-red-500 hover:border-red-400 h-10 w-10 rounded-lg transition-all duration-200 flex items-center justify-center disabled:opacity-50"
+                        title="Deletar"
                       >
                         <i className="fas fa-trash"></i>
-                      </Button>
+                      </button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (

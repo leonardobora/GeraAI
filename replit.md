@@ -93,6 +93,12 @@ This is a full-stack web application that generates personalized Spotify playlis
 ## Changelog
 
 Changelog:
+- July 08, 2025. Enhanced playlist name generation with intelligent keyword extraction and proper noun detection
+- July 08, 2025. Redesigned "Minhas Playlists" page with horizontal list layout instead of card grid
+- July 08, 2025. Updated header with music icon and new app name "Gera AÍ: Playlists com IA"
+- July 08, 2025. Added contact modal with creator's LinkedIn, GitHub, WhatsApp, and PIX donation info
+- July 08, 2025. Improved text contrast with outline styling for better readability
+- July 08, 2025. Enhanced error handling with specific user-friendly messages
 - July 04, 2025. Initial setup - Full-stack playlist generator implemented
 - July 04, 2025. Database and Perplexity AI integration completed  
 - July 04, 2025. Spotify Developer App configured with credentials

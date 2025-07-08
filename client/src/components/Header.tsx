@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import ContactModal from "@/components/ContactModal";
 
 export default function Header() {
   const [location] = useLocation();
@@ -22,8 +23,8 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2">
-              <i className="fab fa-spotify text-spotify-green text-2xl"></i>
-              <span className="text-xl font-bold text-white">Gerador de Playlists IA</span>
+              <i className="fas fa-music text-spotify-green text-2xl"></i>
+              <span className="text-xl font-bold text-white">Gera AÍ: Playlists com IA</span>
             </Link>
           </div>
           
@@ -51,6 +52,16 @@ export default function Header() {
             }`}>
               Configurações
             </Link>
+            
+            <ContactModal>
+              <Button
+                variant="ghost"
+                className="font-medium text-spotify-text hover:text-spotify-green-light transition-colors"
+              >
+                <i className="fas fa-envelope mr-2"></i>
+                Contato
+              </Button>
+            </ContactModal>
           </div>
 
           <div className="flex items-center space-x-4">

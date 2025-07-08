@@ -36,43 +36,89 @@ export class PlaylistService {
   }
 
   private generatePlaylistName(prompt: string): string {
-    // Generate intelligent name based on prompt content
     const lowerPrompt = prompt.toLowerCase();
+    const originalWords = prompt.split(' ');
     
-    // Specific themes for better matching
-    const themes = [
-      { keywords: ['rave', 'festa', 'mdma', 'pós-festa', 'manhã', 'sol', 'óculos'], name: 'Pós-Rave Sunrise ☀️' },
-      { keywords: ['café', 'matinal', 'manhã', 'acordar', 'pós'], name: 'Café da Manhã 🌅' },
-      { keywords: ['dirigir', 'estrada', 'carro', 'viagem', 'amigos', 'casa'], name: 'Road Trip 🚗' },
-      { keywords: ['treino', 'academia', 'exercício', 'malhar'], name: 'Treino Pesado 💪' },
-      { keywords: ['trabalho', 'trabalhar', 'foco', 'concentração'], name: 'Foco Total 🎯' },
-      { keywords: ['estudo', 'estudar', 'ler', 'concentrar'], name: 'Estudo Intenso 📚' },
-      { keywords: ['relaxar', 'descanso', 'tranquilo', 'calma'], name: 'Momento Zen 🧘' },
-      { keywords: ['rock', 'metal', 'heavy'], name: 'Rock Pesado 🤘' },
-      { keywords: ['eletrônica', 'eletro', 'house', 'techno'], name: 'Batida Eletrônica ⚡' },
-      { keywords: ['samba', 'mpb', 'brasileiro', 'brasil'], name: 'Raízes Brasileiras 🇧🇷' },
-      { keywords: ['jazz', 'blues', 'clássico'], name: 'Jazz & Blues 🎷' },
-      { keywords: ['lofi', 'chill', 'ambient'], name: 'Lo-Fi Vibes 🌙' },
-    ];
-
-    // Check for specific themes first
-    for (const theme of themes) {
-      if (theme.keywords.some(keyword => lowerPrompt.includes(keyword))) {
-        return theme.name;
+    // Stop words to exclude
+    const stopWords = ['de', 'da', 'do', 'das', 'dos', 'para', 'com', 'em', 'na', 'no', 'e', 'o', 'a', 'um', 'uma', 'que', 'é', 'foi', 'ser', 'ter', 'há', 'mais', 'muito', 'bem', 'já', 'quando', 'onde', 'como', 'por', 'seu', 'sua', 'seus', 'suas', 'era', 'época', 'tempo', 'uma', 'viva', 'lenda'];
+    
+    // Extract proper nouns (capitalized words that might be names)
+    const properNouns = originalWords.filter(word => 
+      /^[A-Z][a-zA-Z]+/.test(word) && word.length > 2 && !stopWords.includes(word.toLowerCase())
+    );
+    
+    // Extract meaningful words
+    const meaningfulWords = lowerPrompt.split(' ').filter(word => 
+      word.length > 2 && !stopWords.includes(word)
+    );
+    
+    // Music genres
+    const genres = meaningfulWords.filter(word => 
+      ['rock', 'pop', 'jazz', 'blues', 'funk', 'samba', 'mpb', 'punk', 'metal', 'rap', 'hip-hop', 'eletrônica', 'reggae', 'forró', 'sertanejo', 'bossa', 'clássica', 'instrumental', 'hardcore', 'alternative', 'indie'].includes(word)
+    );
+    
+    // Nationality/location words
+    const locations = meaningfulWords.filter(word => 
+      ['brasileiro', 'nacional', 'br', 'brazil', 'brasil'].includes(word)
+    );
+    
+    // Build intelligent name
+    let playlistName = '';
+    
+    // Strategy 1: Person + Genre + Location
+    if (properNouns.length > 0) {
+      playlistName = properNouns.slice(0, 2).join(' ');
+      
+      if (genres.length > 0) {
+        const genre = genres[0].charAt(0).toUpperCase() + genres[0].slice(1);
+        playlistName += ` & ${genre}`;
+      }
+      
+      if (locations.length > 0) {
+        playlistName += ' BR';
+      }
+    } 
+    // Strategy 2: Genre + Location
+    else if (genres.length > 0) {
+      const genre = genres[0].charAt(0).toUpperCase() + genres[0].slice(1);
+      playlistName = genre;
+      
+      if (locations.length > 0) {
+        playlistName += ' Brasileiro';
+      }
+      
+      // Add second genre if available
+      if (genres.length > 1) {
+        const secondGenre = genres[1].charAt(0).toUpperCase() + genres[1].slice(1);
+        playlistName += ` & ${secondGenre}`;
       }
     }
-
-    // Generate creative name from key words
-    const words = prompt.split(' ')
-      .filter(word => word.length > 3) // Filter short words
-      .slice(0, 3) // Take first 3 meaningful words
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
-    
-    if (words.length >= 2) {
-      return words.join(' ') + ' 🎵';
+    // Strategy 3: Key meaningful words
+    else {
+      const keyWords = meaningfulWords.slice(0, 3)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1));
+      playlistName = keyWords.join(' ');
     }
     
-    return 'Playlist Personalizada 🎵';
+    // Fallback
+    if (!playlistName || playlistName.length < 3) {
+      playlistName = 'Playlist Personalizada';
+    }
+    
+    // Add emoji based on genre
+    const emoji = this.getGenreEmoji(lowerPrompt);
+    return `${playlistName} ${emoji}`;
+  }
+  
+  private getGenreEmoji(prompt: string): string {
+    if (prompt.includes('rock') || prompt.includes('metal') || prompt.includes('punk')) return '🤘';
+    if (prompt.includes('eletrônica') || prompt.includes('house') || prompt.includes('techno')) return '⚡';
+    if (prompt.includes('samba') || prompt.includes('mpb') || prompt.includes('brasileiro')) return '🇧🇷';
+    if (prompt.includes('jazz') || prompt.includes('blues')) return '🎷';
+    if (prompt.includes('treino') || prompt.includes('academia')) return '💪';
+    if (prompt.includes('relaxar') || prompt.includes('chill')) return '🧘';
+    if (prompt.includes('festa') || prompt.includes('rave')) return '🎉';
+    return '🎵';
   }
 
   formatDuration(totalSeconds: number): string {
