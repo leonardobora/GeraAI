@@ -7,6 +7,7 @@ import { AIService } from "./services/AIService";
 import { PlaylistService } from "./services/PlaylistService";
 import { insertPlaylistSchema } from "@shared/schema";
 import { z } from "zod";
+import { checkSubscriptionLimits } from "./middleware/subscriptionLimits"; // Import the middleware
 
 const generatePlaylistSchema = z.object({
   prompt: z.string().min(1, "Prompt é obrigatório"),
@@ -20,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -32,7 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Spotify OAuth routes
-  app.get('/api/spotify/auth', isAuthenticated, async (req: any, res) => {
+  app.get("/api/spotify/auth", isAuthenticated, async (req: any, res) => {
     try {
       const spotifyService = new SpotifyService();
       const authUrl = spotifyService.getAuthUrl();
@@ -43,17 +44,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/spotify/callback', async (req, res) => {
+  app.get("/api/spotify/callback", async (req, res) => {
     try {
       const { code, state } = req.query;
-      
-      if (!code || typeof code !== 'string') {
-        return res.status(400).json({ message: "Código de autorização inválido" });
+
+      if (!code || typeof code !== "string") {
+        return res
+          .status(400)
+          .json({ message: "Código de autorização inválido" });
       }
 
       const spotifyService = new SpotifyService();
       const tokens = await spotifyService.exchangeCodeForTokens(code);
-      
+
       // Get user ID from session (assuming user is logged in)
       const userId = (req as any).user?.claims?.sub;
       if (!userId) {
@@ -61,49 +64,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get Spotify user profile
-      const spotifyUser = await spotifyService.getUserProfile(tokens.access_token);
-      
+      const spotifyUser = await spotifyService.getUserProfile(
+        tokens.access_token,
+      );
+
       // Save tokens to database
       await storage.updateUserSpotifyTokens(
         userId,
         tokens.access_token,
         tokens.refresh_token,
-        spotifyUser.id
+        spotifyUser.id,
       );
 
-      res.redirect('/config-spotify?spotify=connected');
+      res.redirect("/config-spotify?spotify=connected");
     } catch (error) {
       console.error("Erro no callback do Spotify:", error);
-      
+
       // Check if the error is related to token or permissions
       if (error instanceof Error) {
-        if (error.message.includes('não autorizado no aplicativo') || error.message.includes('dashboard do desenvolvedor')) {
-          res.redirect('/config-spotify?spotify=registration-error');
-        } else if (error.message.includes('403') || error.message.includes('401')) {
-          res.redirect('/config-spotify?spotify=auth-error');
-        } else if (error.message.includes('Token')) {
-          res.redirect('/config-spotify?spotify=token-error');
-        } else if (error.message.includes('INVALID_CLIENT') || error.message.includes('Invalid redirect URI')) {
-          res.redirect('/config-spotify?spotify=redirect-error');
+        if (
+          error.message.includes("não autorizado no aplicativo") ||
+          error.message.includes("dashboard do desenvolvedor")
+        ) {
+          res.redirect("/config-spotify?spotify=registration-error");
+        } else if (
+          error.message.includes("403") ||
+          error.message.includes("401")
+        ) {
+          res.redirect("/config-spotify?spotify=auth-error");
+        } else if (error.message.includes("Token")) {
+          res.redirect("/config-spotify?spotify=token-error");
+        } else if (
+          error.message.includes("INVALID_CLIENT") ||
+          error.message.includes("Invalid redirect URI")
+        ) {
+          res.redirect("/config-spotify?spotify=redirect-error");
         } else {
-          res.redirect('/config-spotify?spotify=error&message=' + encodeURIComponent(error.message));
+          res.redirect(
+            "/config-spotify?spotify=error&message=" +
+              encodeURIComponent(error.message),
+          );
         }
       } else {
-        res.redirect('/config-spotify?spotify=error');
+        res.redirect("/config-spotify?spotify=error");
       }
     }
   });
 
-  app.get('/api/spotify/info', async (req, res) => {
+  app.get("/api/spotify/info", async (req, res) => {
     try {
       const spotifyService = new SpotifyService();
-      const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+      const domain =
+        process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:5000";
       const redirectUri = `https://${domain}/api/spotify/callback`;
-      
+
       res.json({
         redirectUri,
         authUrl: spotifyService.getAuthUrl(),
-        currentDomain: domain
+        currentDomain: domain,
       });
     } catch (error) {
       console.error("Erro ao obter informações do Spotify:", error);
@@ -111,13 +129,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/spotify/status', isAuthenticated, async (req: any, res) => {
+  app.get("/api/spotify/status", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      
-      const isConnected = !!(user?.spotifyAccessToken && user?.spotifyRefreshToken);
-      
+
+      const isConnected = !!(
+        user?.spotifyAccessToken && user?.spotifyRefreshToken
+      );
+
       res.json({
         connected: isConnected,
         userId: user?.spotifyUserId || null,
@@ -129,148 +149,202 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/spotify/disconnect', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      await storage.updateUserSpotifyTokens(userId, "", "", "");
-      res.json({ message: "Spotify desconectado com sucesso" });
-    } catch (error) {
-      console.error("Erro ao desconectar Spotify:", error);
-      res.status(500).json({ message: "Erro ao desconectar Spotify" });
-    }
-  });
+  app.delete(
+    "/api/spotify/disconnect",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.claims.sub;
+        await storage.updateUserSpotifyTokens(userId, "", "", "");
+        res.json({ message: "Spotify desconectado com sucesso" });
+      } catch (error) {
+        console.error("Erro ao desconectar Spotify:", error);
+        res.status(500).json({ message: "Erro ao desconectar Spotify" });
+      }
+    },
+  );
 
   // Playlist generation route
-  app.post('/api/playlists/generate', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      if (!user?.spotifyAccessToken) {
-        return res.status(400).json({ message: "Configure sua conta Spotify primeiro" });
-      }
+  app.post(
+    "/api/playlists/generate",
+    isAuthenticated,
+    checkSubscriptionLimits,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.claims.sub; // userId is already validated by isAuthenticated and checkSubscriptionLimits
+        const user = await storage.getUser(userId); // Still useful for spotifyAccessToken
 
-      const body = generatePlaylistSchema.parse(req.body);
-      
-      const playlistService = new PlaylistService();
-      const aiService = new AIService();
-      const spotifyService = new SpotifyService();
+        if (!user?.spotifyAccessToken) {
+          return res
+            .status(400)
+            .json({ message: "Configure sua conta Spotify primeiro" });
+        }
 
-      // Generate playlist with AI
-      const playlistData = await playlistService.generatePlaylist(
-        body.prompt,
-        body.tamanho,
-        body.nivelDescoberta,
-        body.conteudoExplicito,
-        userId
-      );
+        const body = generatePlaylistSchema.parse(req.body);
 
-      // Get music recommendations from AI with rate limiting and user settings
-      const recommendations = await aiService.generateMusicRecommendations(
-        body.prompt,
-        body.tamanho,
-        body.nivelDescoberta,
-        body.conteudoExplicito
-      );
+        const playlistService = new PlaylistService();
+        const aiService = new AIService();
+        const spotifyService = new SpotifyService();
 
-      // Search for tracks on Spotify
-      console.log('Iniciando busca de tracks no Spotify com', recommendations.length, 'recomendações');
-      const tracks = await spotifyService.searchTracks(
-        recommendations,
-        user.spotifyAccessToken
-      );
+        // Generate playlist with AI
+        const playlistData = await playlistService.generatePlaylist(
+          body.prompt,
+          body.tamanho,
+          body.nivelDescoberta,
+          body.conteudoExplicito,
+          userId,
+        );
 
-      console.log(`Busca concluída: ${tracks.length} tracks encontrados de ${recommendations.length} recomendações`);
-      
-      if (tracks.length === 0) {
-        console.error('Nenhuma track foi encontrada no Spotify');
-        return res.status(400).json({ message: "Não foi possível gerar faixas para este prompt" });
-      }
+        // Get music recommendations from AI with rate limiting and user settings
+        const recommendations = await aiService.generateMusicRecommendations(
+          body.prompt,
+          body.tamanho,
+          body.nivelDescoberta,
+          body.conteudoExplicito,
+        );
 
-      // Create playlist on Spotify
-      const spotifyPlaylist = await spotifyService.createPlaylist(
-        user.spotifyAccessToken,
-        playlistData.nome,
-        playlistData.descricao || ""
-      );
+        // Search for tracks on Spotify
+        console.log(
+          "Iniciando busca de tracks no Spotify com",
+          recommendations.length,
+          "recomendações",
+        );
+        const tracks = await spotifyService.searchTracks(
+          recommendations,
+          user.spotifyAccessToken,
+        );
 
-      // Add tracks to Spotify playlist
-      const trackUris = tracks.map(track => track.uri);
-      await spotifyService.addTracksToPlaylist(
-        user.spotifyAccessToken,
-        spotifyPlaylist.id,
-        trackUris
-      );
+        console.log(
+          `Busca concluída: ${tracks.length} tracks encontrados de ${recommendations.length} recomendações`,
+        );
 
-      // Update playlist with Spotify ID
-      await storage.updatePlaylistSpotifyId(playlistData.id, spotifyPlaylist.id);
+        if (tracks.length === 0) {
+          console.error("Nenhuma track foi encontrada no Spotify");
+          return res
+            .status(400)
+            .json({
+              message: "Não foi possível gerar faixas para este prompt",
+            });
+        }
 
-      // Save tracks to database
-      const trackData = tracks.map((track, index) => ({
-        playlistId: playlistData.id,
-        spotifyTrackId: track.id,
-        nome: track.name,
-        artista: track.artists[0]?.name || "Artista Desconhecido",
-        album: track.album?.name || "",
-        duracao: Math.floor(track.duration_ms / 1000),
-        previewUrl: track.preview_url,
-        posicao: index + 1,
-        imageUrl: track.album?.images?.[0]?.url || null,
-        adicionadaComSucesso: true,
-      }));
+        // Create playlist on Spotify
+        const spotifyPlaylist = await spotifyService.createPlaylist(
+          user.spotifyAccessToken,
+          playlistData.nome,
+          playlistData.descricao || "",
+        );
 
-      await storage.createTracks(trackData);
+        // Add tracks to Spotify playlist
+        const trackUris = tracks.map((track) => track.uri);
+        await spotifyService.addTracksToPlaylist(
+          user.spotifyAccessToken,
+          spotifyPlaylist.id,
+          trackUris,
+        );
 
-      // Update playlist duration and track count
-      await playlistService.updatePlaylistDuration(playlistData.id, trackData);
+        // Update playlist with Spotify ID
+        await storage.updatePlaylistSpotifyId(
+          playlistData.id,
+          spotifyPlaylist.id,
+        );
 
-      // Get complete playlist with tracks
-      const completePlaylist = await storage.getPlaylistById(playlistData.id);
-      
-      res.json({
-        playlist: completePlaylist,
-        spotifyUrl: spotifyPlaylist.external_urls.spotify,
-        message: "Playlist criada com sucesso!",
-      });
+        // Save tracks to database
+        const trackData = tracks.map((track, index) => ({
+          playlistId: playlistData.id,
+          spotifyTrackId: track.id,
+          nome: track.name,
+          artista: track.artists[0]?.name || "Artista Desconhecido",
+          album: track.album?.name || "",
+          duracao: Math.floor(track.duration_ms / 1000),
+          previewUrl: track.preview_url,
+          posicao: index + 1,
+          imageUrl: track.album?.images?.[0]?.url || null,
+          adicionadaComSucesso: true,
+        }));
 
-    } catch (error) {
-      console.error("Erro ao gerar playlist:", error);
-      
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          message: "Dados inválidos",
-          errors: error.errors,
+        await storage.createTracks(trackData);
+
+        // Update playlist duration and track count
+        await playlistService.updatePlaylistDuration(
+          playlistData.id,
+          trackData,
+        );
+
+        // Get complete playlist with tracks
+        const completePlaylist = await storage.getPlaylistById(playlistData.id);
+
+        // Increment playlist count for the user this month
+        // userId is already defined and validated above
+        const currentMonthYear = new Date().toISOString().slice(0, 7); // Format YYYY-MM
+        await storage.incrementPlaylistCount(userId, currentMonthYear);
+
+        res.json({
+          playlist: completePlaylist,
+          spotifyUrl: spotifyPlaylist.external_urls.spotify,
+          message: "Playlist criada com sucesso!",
         });
-      }
+      } catch (error) {
+        console.error("Erro ao gerar playlist:", error);
 
-      // More specific error handling
-      if (error instanceof Error) {
-        if (error.message.includes('Não foi possível gerar faixas')) {
-          return res.status(400).json({ message: error.message });
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({
+            message: "Dados inválidos",
+            errors: error.errors,
+          });
         }
-        if (error.message.includes('Token')) {
-          return res.status(401).json({ message: "Token Spotify expirado. Reconecte sua conta." });
-        }
-        if (error.message.includes('INVALID_CLIENT')) {
-          return res.status(400).json({ message: "Configuração do Spotify inválida. Verifique o dashboard." });
-        }
-        if (error.message.includes('rate limit')) {
-          return res.status(429).json({ message: "Limite de requisições excedido. Tente novamente em alguns minutos." });
-        }
-        if (error.message.includes('401')) {
-          return res.status(401).json({ message: "Token expirado. Reconecte sua conta Spotify." });
-        }
-        if (error.message.includes('429')) {
-          return res.status(429).json({ message: "Spotify temporariamente indisponível. Tente novamente." });
-        }
-      }
 
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
+        // More specific error handling
+        if (error instanceof Error) {
+          if (error.message.includes("Não foi possível gerar faixas")) {
+            return res.status(400).json({ message: error.message });
+          }
+          if (error.message.includes("Token")) {
+            return res
+              .status(401)
+              .json({
+                message: "Token Spotify expirado. Reconecte sua conta.",
+              });
+          }
+          if (error.message.includes("INVALID_CLIENT")) {
+            return res
+              .status(400)
+              .json({
+                message:
+                  "Configuração do Spotify inválida. Verifique o dashboard.",
+              });
+          }
+          if (error.message.includes("rate limit")) {
+            return res
+              .status(429)
+              .json({
+                message:
+                  "Limite de requisições excedido. Tente novamente em alguns minutos.",
+              });
+          }
+          if (error.message.includes("401")) {
+            return res
+              .status(401)
+              .json({
+                message: "Token expirado. Reconecte sua conta Spotify.",
+              });
+          }
+          if (error.message.includes("429")) {
+            return res
+              .status(429)
+              .json({
+                message:
+                  "Spotify temporariamente indisponível. Tente novamente.",
+              });
+          }
+        }
+
+        res.status(500).json({ message: "Erro interno do servidor" });
+      }
+    },
+  );
 
   // Get user playlists
-  app.get('/api/playlists', isAuthenticated, async (req: any, res) => {
+  app.get("/api/playlists", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const playlists = await storage.getPlaylistsByUserId(userId);
@@ -282,16 +356,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get specific playlist
-  app.get('/api/playlists/:id', isAuthenticated, async (req: any, res) => {
+  app.get("/api/playlists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const playlistId = parseInt(req.params.id);
-      
+
       if (isNaN(playlistId) || playlistId <= 0) {
         return res.status(400).json({ message: "ID de playlist inválido" });
       }
-      
+
       const playlist = await storage.getPlaylistById(playlistId);
-      
+
       if (!playlist) {
         return res.status(404).json({ message: "Playlist não encontrada" });
       }
@@ -309,11 +383,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete playlist
-  app.delete('/api/playlists/:id', isAuthenticated, async (req: any, res) => {
+  app.delete("/api/playlists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const playlistId = parseInt(req.params.id);
       const playlist = await storage.getPlaylistById(playlistId);
-      
+
       if (!playlist) {
         return res.status(404).json({ message: "Playlist não encontrada" });
       }
@@ -334,76 +408,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Share playlist
-  app.post('/api/playlists/:id/share', isAuthenticated, async (req: any, res) => {
-    try {
-      const playlistId = parseInt(req.params.id);
-      const userId = req.user.claims.sub;
-      
-      // Verify ownership
-      const playlist = await storage.getPlaylistById(playlistId);
-      if (!playlist || playlist.userId !== userId) {
-        return res.status(404).json({ message: "Playlist não encontrada" });
-      }
+  app.post(
+    "/api/playlists/:id/share",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const playlistId = parseInt(req.params.id);
+        const userId = req.user.claims.sub;
 
-      // Generate unique share token
-      const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      
-      const sharedPlaylist = await storage.createSharedPlaylist({
-        playlistId,
-        shareToken,
-        isPublic: true,
-      });
+        // Verify ownership
+        const playlist = await storage.getPlaylistById(playlistId);
+        if (!playlist || playlist.userId !== userId) {
+          return res.status(404).json({ message: "Playlist não encontrada" });
+        }
 
-      const shareUrl = `${req.protocol}://${req.get('host')}/shared/${shareToken}`;
-      
-      // Generate Spotify playlist URL if available
-      let spotifyUrl = null;
-      if (playlist.spotifyPlaylistId) {
-        spotifyUrl = `https://open.spotify.com/playlist/${playlist.spotifyPlaylistId}`;
+        // Generate unique share token
+        const shareToken =
+          Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+
+        const sharedPlaylist = await storage.createSharedPlaylist({
+          playlistId,
+          shareToken,
+          isPublic: true,
+        });
+
+        const shareUrl = `${req.protocol}://${req.get("host")}/shared/${shareToken}`;
+
+        // Generate Spotify playlist URL if available
+        let spotifyUrl = null;
+        if (playlist.spotifyPlaylistId) {
+          spotifyUrl = `https://open.spotify.com/playlist/${playlist.spotifyPlaylistId}`;
+        }
+
+        res.json({
+          shareToken,
+          shareUrl,
+          spotifyUrl,
+          message: "Playlist compartilhada com sucesso!",
+        });
+      } catch (error) {
+        console.error("Erro ao compartilhar playlist:", error);
+        res.status(500).json({ message: "Erro ao compartilhar playlist" });
       }
-      
-      res.json({
-        shareToken,
-        shareUrl,
-        spotifyUrl,
-        message: "Playlist compartilhada com sucesso!",
-      });
-    } catch (error) {
-      console.error("Erro ao compartilhar playlist:", error);
-      res.status(500).json({ message: "Erro ao compartilhar playlist" });
-    }
-  });
+    },
+  );
 
   // Get shared playlist (public access)
-  app.get('/api/shared/:token', async (req, res) => {
+  app.get("/api/shared/:token", async (req, res) => {
     try {
       const shareToken = req.params.token;
       const sharedPlaylist = await storage.getSharedPlaylist(shareToken);
-      
+
       if (!sharedPlaylist) {
-        return res.status(404).json({ message: "Playlist compartilhada não encontrada" });
+        return res
+          .status(404)
+          .json({ message: "Playlist compartilhada não encontrada" });
       }
 
       res.json(sharedPlaylist);
     } catch (error) {
       console.error("Erro ao buscar playlist compartilhada:", error);
-      res.status(500).json({ message: "Erro ao buscar playlist compartilhada" });
+      res
+        .status(500)
+        .json({ message: "Erro ao buscar playlist compartilhada" });
     }
   });
 
   // Update user AI settings
-  app.put('/api/user/ai-settings', isAuthenticated, async (req: any, res) => {
+  app.put("/api/user/ai-settings", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { aiProvider, apiKeys } = req.body;
 
-      const validProviders = ['perplexity', 'openai', 'gemini'];
+      const validProviders = ["perplexity", "openai", "gemini"];
       if (!validProviders.includes(aiProvider)) {
         return res.status(400).json({ message: "Provedor de IA inválido" });
       }
 
       await storage.updateUserAISettings(userId, aiProvider, apiKeys || {});
-      
+
       res.json({ message: "Configurações de IA atualizadas com sucesso" });
     } catch (error) {
       console.error("Erro ao atualizar configurações:", error);
@@ -412,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get rate limit status (simplified for now)
-  app.get('/api/user/rate-limit', isAuthenticated, async (req: any, res) => {
+  app.get("/api/user/rate-limit", isAuthenticated, async (req: any, res) => {
     try {
       res.json({
         remainingRequests: 10, // Fixed for now
@@ -421,7 +505,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Erro ao verificar rate limit:", error);
-      res.status(500).json({ message: "Erro ao verificar limite de requisições" });
+      res
+        .status(500)
+        .json({ message: "Erro ao verificar limite de requisições" });
     }
   });
 
