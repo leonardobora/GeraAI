@@ -201,7 +201,18 @@ export class SpotifyService {
       });
 
       if (!response.ok) {
-        throw new Error(`Erro ao adicionar faixas à playlist: ${response.status}`);
+        const errorData = await response.text();
+        console.error(`Spotify API Error ${response.status}: ${errorData}`);
+        
+        if (response.status === 404) {
+          throw new Error('ID de playlist inválido');
+        } else if (response.status === 403) {
+          throw new Error('Acesso negado à playlist. Verifique se você tem permissão.');
+        } else if (response.status === 401) {
+          throw new Error('Token de acesso expirado ou inválido. Reconecte sua conta Spotify.');
+        } else {
+          throw new Error(`Erro ao adicionar faixas à playlist: ${response.status} - ${errorData}`);
+        }
       }
     }
   }
