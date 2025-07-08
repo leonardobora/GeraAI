@@ -160,26 +160,45 @@ export class SpotifyService {
   }
 
   async createPlaylist(accessToken: string, name: string, description: string): Promise<SpotifyPlaylist> {
+    console.log(`Obtendo perfil do usuário para criar playlist: ${name}`);
     const user = await this.getUserProfile(accessToken);
+    console.log(`Perfil obtido. User ID: ${user.id}`);
     
-    const response = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
+    const url = `https://api.spotify.com/v1/users/${user.id}/playlists`;
+    const body = {
+      name: name,
+      description: description,
+      public: false,
+    };
+    
+    console.log(`Fazendo requisição para criar playlist: ${url}`);
+    console.log(`Body da requisição:`, JSON.stringify(body, null, 2));
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: name,
-        description: description,
-        public: false,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao criar playlist: ${response.status}`);
+      const errorData = await response.text();
+      console.error(`Erro ao criar playlist - Status: ${response.status}, Response: ${errorData}`);
+      
+      if (response.status === 403) {
+        throw new Error('Permissão negada para criar playlist. Verifique se o aplicativo tem as permissões necessárias.');
+      } else if (response.status === 401) {
+        throw new Error('Token de acesso expirado ou inválido. Reconecte sua conta Spotify.');
+      } else {
+        throw new Error(`Erro ao criar playlist: ${response.status} - ${errorData}`);
+      }
     }
 
-    return await response.json();
+    const playlistData = await response.json();
+    console.log(`Playlist criada com sucesso. ID: ${playlistData.id}`);
+    return playlistData;
   }
 
   async addTracksToPlaylist(accessToken: string, playlistId: string, trackUris: string[]): Promise<void> {
