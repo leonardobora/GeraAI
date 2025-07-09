@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import rateLimit from "express-rate-limit";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -536,7 +537,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get rate limit status (simplified for now)
-  app.get("/api/user/rate-limit", isAuthenticated, async (req: any, res) => {
+  const rateLimit = require("express-rate-limit");
+  const rateLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // Limit each IP to 10 requests per hour
+    message: { message: "Too many requests, please try again later." },
+  });
+
+  app.get("/api/user/rate-limit", isAuthenticated, rateLimiter, async (req: any, res) => {
     try {
       res.json({
         remainingRequests: 10, // Fixed for now
