@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import rateLimit from "express-rate-limit";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -516,7 +517,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user AI settings
-  app.put("/api/user/ai-settings", isAuthenticated, async (req: any, res) => {
+  const aiSettingsRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // Limit each IP to 50 requests per windowMs
+    message: { message: "Too many requests, please try again later." },
+  });
+
+  app.put("/api/user/ai-settings", isAuthenticated, aiSettingsRateLimiter, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { aiProvider, apiKeys } = req.body;
@@ -536,7 +543,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get rate limit status (simplified for now)
-  app.get("/api/user/rate-limit", isAuthenticated, async (req: any, res) => {
+  const rateLimit = require("express-rate-limit");
+  const RATE_LIMIT_WINDOW_MS = process.env.RATE_LIMIT_WINDOW_MS ? parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) : 60 * 60 * 1000; // 1 hour
+  const RATE_LIMIT_MAX = process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX, 10) : 10; // Limit each IP to 10 requests per hour
+
+  const rateLimiter = rateLimit({
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    max: RATE_LIMIT_MAX,
+    message: { message: "Too many requests, please try again later." },
+  });
+
+  app.get("/api/user/rate-limit", isAuthenticated, rateLimiter, async (req: any, res) => {
     try {
       res.json({
         remainingRequests: 10, // Fixed for now
