@@ -236,6 +236,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { planId } = req.body;
         const userId = req.user.claims.sub;
 
+        // Validate planId
+        const validPlans = ["basic", "premium", "pro"]; // Example valid plans
+        if (!planId || !validPlans.includes(planId)) {
+          return res.status(400).json({
+            message: "Invalid or missing planId. Please provide a valid plan.",
+          });
+        }
         console.log(
           `User ${userId} is attempting to create a checkout session for plan ${planId}.`
         );
