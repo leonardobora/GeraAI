@@ -517,7 +517,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user AI settings
-  app.put("/api/user/ai-settings", isAuthenticated, async (req: any, res) => {
+  const aiSettingsRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // Limit each IP to 50 requests per windowMs
+    message: { message: "Too many requests, please try again later." },
+  });
+
+  app.put("/api/user/ai-settings", isAuthenticated, aiSettingsRateLimiter, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { aiProvider, apiKeys } = req.body;
