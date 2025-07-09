@@ -544,9 +544,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get rate limit status (simplified for now)
   const rateLimit = require("express-rate-limit");
+  const RATE_LIMIT_WINDOW_MS = process.env.RATE_LIMIT_WINDOW_MS ? parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) : 60 * 60 * 1000; // 1 hour
+  const RATE_LIMIT_MAX = process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX, 10) : 10; // Limit each IP to 10 requests per hour
+
   const rateLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // Limit each IP to 10 requests per hour
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    max: RATE_LIMIT_MAX,
     message: { message: "Too many requests, please try again later." },
   });
 
