@@ -10,6 +10,7 @@ import MinhasPlaylists from "@/pages/MinhasPlaylists";
 import PlaylistCompartilhada from "@/pages/PlaylistCompartilhada";
 import ConfigSpotify from "@/pages/ConfigSpotify";
 import ConfiguracaoIA from "@/pages/ConfiguracaoIA";
+import PricingPage from "@/pages/PricingPage"; // Import the PricingPage component
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
           <Route path="/playlists" component={MinhasPlaylists} />
           <Route path="/config-spotify" component={ConfigSpotify} />
           <Route path="/config-ia" component={ConfiguracaoIA} />
+          <Route path="/pricing" component={PricingPage} /> {/* Add pricing route */}
         </>
       )}
       <Route path="/shared/:token" component={PlaylistCompartilhada} />

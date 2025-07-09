@@ -225,6 +225,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({
               message: "Não foi possível gerar faixas para este prompt",
             });
+
+  // Stripe routes
+  app.post(
+    "/api/stripe/create-checkout-session",
+    isAuthenticated,
+    async (req: Request<{}, {}, { planId: string }, {}> & { user: { claims: { sub: string } } }, res: Response) => {
+      try {
+        // TODO: Implement actual Stripe session creation logic
+        const { planId } = req.body;
+        const userId = req.user.claims.sub;
+
+        // Validate planId
+        const validPlans = ["basic", "premium", "pro"]; // Example valid plans
+        if (!planId || !validPlans.includes(planId)) {
+          return res.status(400).json({
+            message: "Invalid or missing planId. Please provide a valid plan.",
+          });
+        }
+        console.log(
+          `User ${userId} is attempting to create a checkout session for plan ${planId}.`
+        );
+
+        // Mock response for now
+        res.json({
+          message: "Stripe checkout session created successfully (mock).",
+          sessionId: `mock_session_${Date.now()}`,
+          planId: planId,
+          userId: userId,
+        });
+      } catch (error) {
+        console.error("Erro ao criar sessão de checkout Stripe:", error);
+        res
+          .status(500)
+          .json({ message: "Erro ao criar sessão de checkout Stripe." });
+      }
+    }
+  );
+
+  const httpServer = createServer(app);
+  return httpServer;
         }
 
         // Create playlist on Spotify
