@@ -230,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/stripe/create-checkout-session",
     isAuthenticated,
-    async (req: any, res) => {
+    async (req: Request<{}, {}, { planId: string }, {}> & { user: { claims: { sub: string } } }, res: Response) => {
       try {
         // TODO: Implement actual Stripe session creation logic
         const { planId } = req.body;
